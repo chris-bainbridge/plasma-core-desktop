@@ -5,18 +5,20 @@
 snap_cmd="$1"
 snap_name="$(echo "$snap_cmd" | cut -d . -f 1)"
 
+session_type=$2
+
 # Set up PATH and XDG_DATA_DIRS to allow calling snaps
 if [ -f /snap/snapd/current/etc/profile.d/apps-bin-path.sh ]; then
     source /snap/snapd/current/etc/profile.d/apps-bin-path.sh
 fi
 
-export XDG_CURRENT_DESKTOP=ubuntu:GNOME
+export XDG_CURRENT_DESKTOP=$session_type
 export GSETTINGS_BACKEND=keyfile
 
 dbus-update-activation-environment --systemd --all
 
 # Don't set this in our own environment, since it will make
-# gnome-session believe it is running in X mode
+# the session believe it is running in X mode
 dbus-update-activation-environment --systemd DISPLAY=:0 WAYLAND_DISPLAY=wayland-0 XAUTHORITY=$XDG_RUNTIME_DIR/.Xauthority
 
 # Set up a background task to wait for gnome-session to create its
@@ -26,6 +28,11 @@ function fixup_xauthority() {
     while :; do
         sleep 1s
         xauth_file="$(ls -1t $XDG_RUNTIME_DIR/snap.$snap_name/.mutter-Xwaylandauth.* | head -n1)"
+        if [ -f "$xauth_file" ]; then
+            cp "$xauth_file" $XDG_RUNTIME_DIR/.Xauthority
+            return
+        fi
+        xauth_file="$(ls -1t /tmp/snap-private-tmp/snap.$snap_name/tmp/runtime-$USER/xauth_* | head -n1)"
         if [ -f "$xauth_file" ]; then
             cp "$xauth_file" $XDG_RUNTIME_DIR/.Xauthority
             return
