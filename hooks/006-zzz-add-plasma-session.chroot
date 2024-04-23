@@ -1,0 +1,46 @@
+#!/bin/sh -x
+
+set -e
+
+export DEBIAN_FRONTEND=noninteractive
+
+# Ensure /proc is available
+mount -t proc proc /proc
+trap 'umount /proc' EXIT
+
+# Install a basic Plasma session
+apt install --no-install-recommends -y \
+    pipewire-pulse \
+    xdg-desktop-portal-kde \
+    plasma-desktop \
+    plasma-workspace-wallpapers \
+    plasma-discover \
+    plasma-discover-backend-snap \
+    plasma-pa \
+    systemsettings \
+    kde-config-gtk-style \
+    kde-config-sddm \
+    khelpcenter \
+    kinfocenter \
+    kmenuedit \
+    kscreen \
+    ksshaskpass \
+    kwrited \
+    powerdevil \
+    dolphin \
+    dolphin-plugins \
+    konsole \
+    kf6-kimageformat-plugins \
+    libpam-kwallet6 \
+    libqt6sql6-sqlite \
+    libqt6sql6-mysql \
+    qt6-gtk-platformtheme \
+    qt6-qpa-plugins \
+    qt6-translations-l10n \
+    speech-dispatcher-espeak-ng \
+    sound-icons
+
+# Remove regular Plasma sessions, so only confined session is available
+rm -f /usr/share/wayland-sessions/plasma.desktop
+rm -f /usr/share/xsessions/plasmax11.desktop
+

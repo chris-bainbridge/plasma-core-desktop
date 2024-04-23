@@ -126,6 +126,7 @@ rtkit:x:115:124:RealtimeKit,,,:/proc:/usr/sbin/nologin
 pipewire:x:116:125:Pipewire,,,:/proc:/usr/sbin/nologin
 polkitd:x:117:126:polkit:/nonexistent:/usr/sbin/nologin
 systemd-journal:x:118:106:Reserved:/run/systemd:/bin/false
+speech-dispatcher:x:107:1005:Speech Dispatcher,,,:/run/speech-dispatcher:/bin/false
 EOF
 cp /etc/passwd /etc/passwd.orig # We make a copy for a later sanity-compare
 
@@ -167,6 +168,7 @@ colord:*:18495:0:99999:7:::
 gnome-initial-setup:*:18495:0:99999:7:::
 rtkit:*:19390:0:99999:7:::
 polkitd:!*:19635:::::
+speech-dispatcher:!:19835:0:99999:7:::
 EOF
 cp /etc/shadow /etc/shadow.orig # We make a copy for a later sanity-compare
 
