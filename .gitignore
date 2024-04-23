@@ -3,3 +3,5 @@ parts/
 snap/
 prime/
 stage/
+snap-connections.txt
+hooks/999-zzz-passwordless-root-on-serial.chroot

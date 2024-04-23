@@ -140,6 +140,16 @@ is created and enabled, that launches that shell script. The script tries
 to connect all plugs once each second, and only when all succeeded, it exits
 and disables the service, thus it won't be run again in next boots.
 
+# Ensure a passwordless root shell is available
+
+The file `attic/999-zzz-passwordless-root-on-serial.chroot` provides some
+convenience to have a root login available on the serial port of the VM
+when used through QEMU.
+
+This helps debugging when the graphical session is not reachable. Simply
+copy that file into `hooks/`, rebuild the snap and insert it in your
+VM image.
+
 # Bootchart
 
 It is possible to enable bootcharts by adding `core.bootchart` to the
