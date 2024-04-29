@@ -44,3 +44,8 @@ apt install --no-install-recommends -y \
 rm -f /usr/share/wayland-sessions/plasma.desktop
 rm -f /usr/share/xsessions/plasmax11.desktop
 
+# Remove D-Bus service activation files provided by
+# the session snap.
+rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kde.service
+rm /usr/lib/systemd/user/plasma-xdg-desktop-portal-kde.service
+
