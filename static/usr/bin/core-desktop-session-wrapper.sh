@@ -32,14 +32,11 @@ function fixup_xauthority() {
             cp "$xauth_file" $XDG_RUNTIME_DIR/.Xauthority
             return
         fi
-        xauth_file="$(ls -1t /tmp/snap-private-tmp/snap.$snap_name/tmp/runtime-$USER/xauth_* | head -n1)"
-        if [ -f "$xauth_file" ]; then
-            cp "$xauth_file" $XDG_RUNTIME_DIR/.Xauthority
-            return
-        fi
     done
 }
-fixup_xauthority &
+if [ $session_type != "KDE" ]; then
+    fixup_xauthority &
+fi
 
 # Symlink the Wayland socket from the snap's private directory
 ln -sf "snap.$snap_name/wayland-0" $XDG_RUNTIME_DIR/wayland-0
