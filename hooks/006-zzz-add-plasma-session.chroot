@@ -75,8 +75,3 @@ rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/fwupd-backend.so
 rm -rf /usr/share/doc/plasma-discover-backend-fwupd/*
 rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/kns-backend.so
 rm /usr/share/metainfo/org.kde.discover.packagekit.appdata.xml
-
-cat >/etc/xdg/startkderc<<EOF
-[General]
-systemdBoot=false
-EOF
