@@ -69,3 +69,7 @@ rm -f /usr/share/xsessions/plasmax11.desktop
 rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kde.service
 rm /usr/lib/systemd/user/plasma-xdg-desktop-portal-kde.service
 
+cat >/etc/xdg/startkderc<<EOF
+[General]
+systemdBoot=false
+EOF
