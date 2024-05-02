@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+apt install --no-install-recommends -y \
+    qdbus-qt6 \
+    qt6-tools \
+    apparmor-utils
+

@@ -4,4 +4,5 @@ snap/
 prime/
 stage/
 snap-connections.txt
+hooks/007-zzz-add-extra-developer-tools.chroot
 hooks/999-zzz-passwordless-root-on-serial.chroot
