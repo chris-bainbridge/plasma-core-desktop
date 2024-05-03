@@ -1,9 +1,9 @@
-name: core22-desktop
+name: plasma-core22-desktop
 # version: "22"
 adopt-info: bootstrap
-summary: Runtime environment based on Ubuntu 22.04
+summary: Runtime environment based on KDE Neon Core / Ubuntu 22.04
 description: |
-  The base snap based on the Ubuntu 22.04 release.
+  The base snap based on KDE Neon Core over the Ubuntu 22.04 release.
 confinement: strict
 type: base
 build-base: core22
