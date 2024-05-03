@@ -5,8 +5,3 @@ include:
   - project: sysadmin/ci-utilities
     file:
       - /gitlab-templates/snap-snapcraft-lxd.yml
-
-default:
-    before_script:
-    - cp attic/999-zzz-passwordless-root-on-serial.chroot ./hooks
-    - cp attic/snap-connections.txt ./
