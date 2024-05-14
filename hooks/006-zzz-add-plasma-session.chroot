@@ -10,16 +10,9 @@ trap 'umount /proc' EXIT
 
 # Install a basic Plasma session
 apt install --no-install-recommends -y \
-    pipewire-pulse \
-    neon-essentials-desktop \
-    neon-settings-2 \
-    xdg-desktop-portal-kde \
-    xwaylandvideobridge \
     plasma-desktop \
-    plasma-dataengines-addons \
-    plasma-runners-addons \
-    plasma-widgets-addons \
-    plasma-wallpapers-addons \
+    kdeplasma-addons \
+    xwaylandvideobridge \
     plasma-workspace-wallpapers \
     plasma-discover \
     plasma-discover-backend-snap \
@@ -28,9 +21,6 @@ apt install --no-install-recommends -y \
     plasma-nm \
     plasma-pa \
     plasma-systemmonitor \
-    kdeplasma-addons \
-    kdeplasma-addons-data \
-    kwin-addons \
     systemsettings \
     breeze-gtk-theme \
     kde-config-gtk-style \
@@ -57,8 +47,7 @@ apt install --no-install-recommends -y \
     qml6-module-org-kde-qqc2desktopstyle \
     qml6-module-qtqml \
     speech-dispatcher-espeak-ng \
-    sound-icons \
-    shared-mime-info
+    sound-icons
 
 # Remove regular Plasma sessions, so only confined session is available
 rm -f /usr/share/wayland-sessions/plasma.desktop
