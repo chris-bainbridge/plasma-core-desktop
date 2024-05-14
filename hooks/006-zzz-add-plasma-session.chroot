@@ -64,3 +64,21 @@ rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/fwupd-backend.so
 rm -rf /usr/share/doc/plasma-discover-backend-fwupd/*
 rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/kns-backend.so
 rm /usr/share/metainfo/org.kde.discover.packagekit.appdata.xml
+
+# Clean up the systemd and dbus activation environment at beginning
+# of startup (just after startplasma pushed its own environment)
+# this is necessary to avoid the desktop-launch routine wrongfully
+# thinking it's run from a confined snap
+cat >/usr/lib/systemd/user/plasma-env-cleanup.service<<EOF
+[Unit]
+Description=KDE Plasma Activation Environments Cleanups
+PartOf=graphical-session.target
+Before=plasma-kwin_wayland.service
+
+[Service]
+ExecStart=dbus-update-activation-environment --systemd SNAP=""
+Slice=session.slice
+EOF
+
+mkdir /usr/lib/systemd/user/plasma-workspace-wayland.target.wants
+ln -s /usr/lib/systemd/user/plasma-env-cleanup.service /usr/lib/systemd/user/plasma-workspace-wayland.target.wants
