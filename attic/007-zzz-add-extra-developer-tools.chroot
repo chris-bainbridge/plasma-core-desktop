@@ -3,6 +3,9 @@
 set -e
 
 apt install --no-install-recommends -y \
+    binutils \
+    gdb \
+    strace \
     qdbus-qt6 \
     qt6-tools \
     apparmor-utils
