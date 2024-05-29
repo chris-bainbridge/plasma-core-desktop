@@ -77,6 +77,7 @@ Before=plasma-kwin_wayland.service
 
 [Service]
 ExecStart=dbus-update-activation-environment --systemd SNAP=""
+Type=oneshot
 Slice=session.slice
 EOF
 
