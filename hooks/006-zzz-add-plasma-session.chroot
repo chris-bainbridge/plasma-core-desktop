@@ -76,7 +76,7 @@ PartOf=graphical-session.target
 Before=plasma-kwin_wayland.service
 
 [Service]
-ExecStart=dbus-update-activation-environment --systemd SNAP="" _KDE_APPLICATIONS_AS_FORKING=1
+ExecStart=/usr/bin/cleanup-activation-environment.sh
 Type=oneshot
 Slice=session.slice
 EOF
