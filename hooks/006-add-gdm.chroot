@@ -9,7 +9,6 @@ mount -t proc proc /proc
 trap 'umount /proc' EXIT
 
 apt install --no-install-recommends -y \
-    gdm3 \
     polkitd \
     xwayland \
     libgl1-mesa-dri \
@@ -59,6 +58,14 @@ apt install --no-install-recommends -y \
     inotify-tools \
     alsa-ucm-conf
 
+mkdir /var/lib/sddm
+chown sddm:sddm /var/lib/sddm
+
+apt install --no-install-recommends -y \
+    sddm \
+    sddm-theme-breeze \
+    swaybg
+
 # Remove setuid from some executables we're not using
 chmod u-s,g-s /usr/bin/pkexec
 
@@ -67,9 +74,16 @@ rm /usr/share/xsessions/ubuntu.desktop
 
 # Move display-manager.service symlink out of /etc
 rm /etc/systemd/system/display-manager.service
-ln -s gdm.service /lib/systemd/system/display-manager.service
-# Delay gdm until snapd.seeded and cloud-config are complete
-sed -i '/^Description=/ a # delay until snapd finishes seeding\nAfter=snapd.seeded.service' /lib/systemd/system/gdm.service
+ln -s sddm.service /lib/systemd/system/display-manager.service
+# Delay sddm until snapd.seeded and cloud-config are complete
+sed -i '/^Description=/ a # delay until snapd finishes seeding\nAfter=snapd.seeded.service' /lib/systemd/system/sddm.service
+sed -i 's/^ExecStart=\/usr\/bin\/sddm/ExecStart=\/usr\/libexec\/start-sddm.sh/' /lib/systemd/system/sddm.service
+
+# Move SDDM config to writable directory
+mkdir -p /etc/writable/sddm
+touch /etc/writable/sddm/sddm.conf
+ln -s writable/sddm/sddm.conf /etc/sddm.conf
+
 
 # Remove D-Bus service activation files provided by
 # ubuntu-desktop-session snap.
@@ -148,9 +162,9 @@ rm -f /usr/share/wayland-sessions/ubuntu-wayland.desktop
 rm -f /usr/share/xsessions/ubuntu-xorg.desktop
 
 # Move GDM config to writable directory
-mkdir -p /etc/writable/gdm3
-mv /etc/gdm3/custom.conf /etc/writable/gdm3/custom.conf
-ln -s ../writable/gdm3/custom.conf /etc/gdm3/custom.conf
+#mkdir -p /etc/writable/gdm3
+#mv /etc/gdm3/custom.conf /etc/writable/gdm3/custom.conf
+#ln -s ../writable/gdm3/custom.conf /etc/gdm3/custom.conf
 
 # Disable gnome-shell systemd
 rm -f /usr/lib/systemd/user/org.gnome.Shell*

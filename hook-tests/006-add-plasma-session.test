@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -e
+
+if [ ! -f usr/share/wallpapers/Next/contents/images/1920x1200.png ]; then
+    echo "wallpaper displayed during system provisioning is missing"
+    exit 1
+fi
