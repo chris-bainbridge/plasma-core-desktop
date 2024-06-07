@@ -20,7 +20,12 @@ user_count=`grep '/home/' /var/lib/extrausers/passwd | wc -l`
 if [ $user_count -lt 1 ] ; then
     mv $SDDM_CONF $SDDM_CONF.orig
     cat >$SDDM_CONF<<EOF
+[General]
+DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
+
 [Wayland]
+CompositorCommand=kwin_wayland --no-lockscreen --no-global-shortcuts --locale1
 SessionDir=/usr/share/wayland-sessions-bootstrap
 
 [Autologin]

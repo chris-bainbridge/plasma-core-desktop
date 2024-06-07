@@ -81,7 +81,14 @@ sed -i 's/^ExecStart=\/usr\/bin\/sddm/ExecStart=\/usr\/libexec\/start-sddm.sh/' 
 
 # Move SDDM config to writable directory
 mkdir -p /etc/writable/sddm
-touch /etc/writable/sddm/sddm.conf
+cat >/etc/writable/sddm/sddm.conf<<EOF
+[General]
+DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
+
+[Wayland]
+CompositorCommand=kwin_wayland --no-lockscreen --no-global-shortcuts --locale1
+EOF
 ln -s writable/sddm/sddm.conf /etc/sddm.conf
 
 
