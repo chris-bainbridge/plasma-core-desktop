@@ -28,3 +28,6 @@ sed -i '4 i "themeResourceName": "theme/Yaru/gnome-shell-theme.gresource",' /usr
 sed -i '5 i "iconsResourceName": "theme/Yaru/gnome-shell-icons.gresource",' /usr/share/gnome-shell/modes/initial-setup.json
 
 mv /init-default.compiled /usr/share/gnome-initial-setup/initial-setup-dconf-defaults
+
+apt autoremove -y gnome-initial-setup
+
