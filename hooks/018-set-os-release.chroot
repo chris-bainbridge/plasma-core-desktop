@@ -8,6 +8,7 @@ PRETTY_NAME="Ubuntu Core 22"
 VERSION_ID="22"
 VARIANT_ID=desktop
 VARIANT="Desktop"
-HOME_URL="https://snapcraft.io/"
+HOME_URL="https://www.ubuntu.com/core"
 BUG_REPORT_URL="https://bugs.launchpad.net/snappy/"
+UBUNTU_VARIANT="core"
 EOF
