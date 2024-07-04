@@ -36,8 +36,6 @@ apt install --no-install-recommends -y \
     kdeplasma-addons \
     xwaylandvideobridge \
     plasma-workspace-wallpapers \
-    plasma-discover \
-    plasma-discover-backend-snap \
     plasma-welcome \
     plasma-disks \
     plasma-nm \
@@ -143,13 +141,6 @@ chmod a+x /usr/sbin/adduser
 # by Ubuntu Core.
 sed -i "/^ReadWritePaths=/ a \\  /var/lib/extrausers/ \\\\" \
     /usr/lib/systemd/system/accounts-daemon.service
-
-# Remove extra backends for discover.
-rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/packagekit-backend.so
-rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/fwupd-backend.so
-rm -rf /usr/share/doc/plasma-discover-backend-fwupd/*
-rm /usr/lib/x86_64-linux-gnu/qt6/plugins/discover/kns-backend.so
-rm /usr/share/metainfo/org.kde.discover.packagekit.appdata.xml
 
 # Remove NetworkManager from the session snap.
 rm /usr/sbin/NetworkManager
