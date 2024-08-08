@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/bash -x
 
 set -e
 
@@ -118,10 +118,42 @@ rm -f /etc/systemd/user/sockets.target.wants/pipewire*
 rm -f /etc/systemd/user/default.target.wants/pipewire*
 rm -f /usr/lib/systemd/user/org.freedesktop.IBus.session.generic.service
 
+# Remove autostart files provided by the session snap
+rm /etc/xdg/autostart/kaccess.desktop
+rm /etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop
+
 # Remove D-Bus service activation files provided by
 # the session snap.
 rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kde.service
 rm /usr/lib/systemd/user/plasma-xdg-desktop-portal-kde.service
+rm /usr/share/dbus-1/services/org.kde.ActivityManager.service
+rm /usr/share/dbus-1/services/org.kde.kded6.service
+rm /usr/share/dbus-1/services/org.kde.KSplash.service
+rm /usr/share/dbus-1/services/org.kde.LogoutPrompt.service
+rm /usr/share/dbus-1/services/org.kde.Shutdown.service
+rm /usr/share/dbus-1/services/org.kde.krunner.service
+rm /usr/share/dbus-1/services/org.kde.ksystemstats1.service
+
+rm "/usr/lib/systemd/user/plasma-kwin_wayland.service"
+ln -s "/etc/systemd/user/snap.plasma-desktop-session.plasma-kwin-wayland.service" "/usr/lib/systemd/user/plasma-kwin_wayland.service"
+snapped_services=(
+    plasma-ksplash
+    plasma-ksmserver
+    plasma-kcminit
+    plasma-plasmashell
+    plasma-kded6
+    plasma-kglobalaccel
+    plasma-kactivitymanagerd
+    plasma-xembedsniproxy
+    plasma-gmenudbusmenuproxy
+    plasma-powerdevil
+    plasma-krunner
+    plasma-ksystemstats
+)
+for service in "${snapped_services[@]}"; do
+    rm "/usr/lib/systemd/user/$service.service"
+    ln -s "/etc/systemd/user/snap.plasma-desktop-session.$service.service" "/usr/lib/systemd/user/$service.service"
+done
 
 # Remove the XDG desktop portal platform theme, components
 # of the session must not go through it
