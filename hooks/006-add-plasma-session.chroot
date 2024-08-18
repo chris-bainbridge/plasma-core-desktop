@@ -182,3 +182,21 @@ sed -i "/^ReadWritePaths=/ a \\  /var/lib/extrausers/ \\\\" \
 rm /usr/sbin/NetworkManager
 rm /usr/lib/systemd/system/NetworkManager*.service
 
+# Clean up the systemd and dbus activation environment at beginning
+# of startup (just after startplasma pushed its own environment)
+# this is necessary to avoid the desktop-launch routine wrongfully
+# thinking it's run from a confined snap
+cat >/usr/lib/systemd/user/plasma-env-cleanup.service<<EOF
+[Unit]
+Description=KDE Plasma Activation Environments Cleanups
+PartOf=graphical-session.target
+Before=plasma-kwin_wayland.service
+
+[Service]
+ExecStart=/usr/bin/cleanup-activation-environment.sh
+Type=oneshot
+Slice=session.slice
+EOF
+
+mkdir /usr/lib/systemd/user/plasma-workspace-wayland.target.wants
+ln -s /usr/lib/systemd/user/plasma-env-cleanup.service /usr/lib/systemd/user/plasma-workspace-wayland.target.wants
