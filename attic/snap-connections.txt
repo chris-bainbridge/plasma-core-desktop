@@ -2,17 +2,16 @@ avahi:network
 avahi:network-bind
 avahi:network-control
 bluez:bluetooth-control
-bluez:client
 bluez:home
 bluez:kernel-crypto-api
 bluez:uhid
-cups:avahi-control
+cups:avahi-control avahi:avahi-control
 cups:etc-cups
 cups:home
 cups:network
 cups:network-bind
 cups:raw-usb
-ipp-usb:avahi-control
+ipp-usb:avahi-control avahi:avahi-control
 ipp-usb:hardware-observe
 ipp-usb:network
 ipp-usb:network-bind
@@ -29,51 +28,14 @@ network-manager:network-control
 network-manager:network-observe
 network-manager:network-setup-control
 network-manager:network-setup-observe
-network-manager:nmcli
 network-manager:ppp
-snapd-desktop-integration:desktop
-snapd-desktop-integration:gnome-42-2204
-snapd-desktop-integration:gtk-3-themes
-snapd-desktop-integration:icon-themes
-snapd-desktop-integration:login-session-observe
-snapd-desktop-integration:opengl
-snapd-desktop-integration:snap
-snapd-desktop-integration:snap-themes-control
-snapd-desktop-integration:sound-themes
-snapd-desktop-integration:wayland
-snapd-desktop-integration:x11
-snap-store:desktop
-snap-store:desktop-launch
-snap-store:gnome-42-2204
-snap-store:gtk-3-themes
-snap-store:icon-themes
-snap-store:network
-snap-store:opengl
-snap-store:snapd-control
-snap-store:sound-themes
-snap-store:wayland
-snap-store:x11
-ubuntu-core-desktop-init:account-control
-ubuntu-core-desktop-init:hostname-control
-ubuntu-core-desktop-init:locale-control
-ubuntu-core-desktop-init:timezone-control
-ubuntu-core-desktop-init:desktop
-ubuntu-core-desktop-init:gnome-42-2204
-ubuntu-core-desktop-init:gtk-3-themes
-ubuntu-core-desktop-init:icon-themes
-ubuntu-core-desktop-init:opengl
-ubuntu-core-desktop-init:sound-themes
-ubuntu-core-desktop-init:wayland
-ubuntu-core-desktop-init:x11
-plasma-desktop-session:account-control
 plasma-desktop-session:alsa
-plasma-desktop-session:avahi-control
+plasma-desktop-session:avahi-control avahi:avahi-control
 plasma-desktop-session:bluetooth-control
-plasma-desktop-session:bluez
-plasma-desktop-session:cups-control
+plasma-desktop-session:bluez bluez:service
+plasma-desktop-session:cups-control cups:cups-control
 plasma-desktop-session:desktop-launch
 plasma-desktop-session:dot-hidden
-plasma-desktop-session:dot-local-share-nautilus
 plasma-desktop-session:hardware-observe
 plasma-desktop-session:home
 plasma-desktop-session:hostname-control
@@ -83,7 +45,7 @@ plasma-desktop-session:login-session-observe
 plasma-desktop-session:mount-observe
 plasma-desktop-session:network-bind
 plasma-desktop-session:network-control
-plasma-desktop-session:network-manager
+plasma-desktop-session:network-manager network-manager:service
 plasma-desktop-session:network-observe
 plasma-desktop-session:opengl
 plasma-desktop-session:polkit-agent
@@ -91,10 +53,6 @@ plasma-desktop-session:process-control
 plasma-desktop-session:shell-config-files
 plasma-desktop-session:shell-session-locale-files
 plasma-desktop-session:shutdown
-plasma-desktop-session:snapd-control
 plasma-desktop-session:system-observe
 plasma-desktop-session:systemd-user-control
-plasma-desktop-session:time-control
-plasma-desktop-session:timeserver-control
-plasma-desktop-session:timezone-control
-plasma-desktop-session:upower-observe
+plasma-desktop-session:udisks2
