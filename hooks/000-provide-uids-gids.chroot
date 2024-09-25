@@ -238,6 +238,7 @@ rtkit:x:124:
 pipewire:x:125:
 polkitd:x:126:
 sddm:x:113:
+rdma:x:121:
 EOF
 cp /etc/group /etc/group.orig # We make a copy for a later sanity-compare
 
@@ -307,5 +308,6 @@ pipewire:!::
 rtkit:!::
 polkitd:!*::
 sddm:!::
+rdma:!::
 EOF
 cp /etc/gshadow /etc/gshadow.orig # We make a copy for a later sanity-compare
