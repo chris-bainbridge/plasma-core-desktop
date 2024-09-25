@@ -122,6 +122,19 @@ rm -f /usr/lib/systemd/user/org.freedesktop.IBus.session.generic.service
 rm /etc/xdg/autostart/kaccess.desktop
 rm /etc/xdg/autostart/org.kde.xwaylandvideobridge.desktop
 
+# Prevent known unconfined apps from being started in the session
+rm /etc/xdg/autostart/baloo_file.desktop
+rm /usr/lib/systemd/user/kde-baloo.service
+rm /usr/lib/systemd/user/drkonqi-coredump-pickup.service
+rm /usr/lib/systemd/user/ssh-agent.service
+
+# Remove known unconfined apps executables
+rm /usr/lib/x86_64-linux-gnu/libexec/kf6/baloo_file
+rm /usr/lib/x86_64-linux-gnu/libexec/drkonqi-coredump-processor
+rm /usr/bin/ssh-agent
+rm /usr/lib/openssh/agent-launch
+
+
 # Remove D-Bus service activation files provided by
 # the session snap.
 rm /usr/share/dbus-1/services/org.freedesktop.impl.portal.desktop.kde.service
