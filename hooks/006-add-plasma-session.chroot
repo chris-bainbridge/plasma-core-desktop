@@ -162,6 +162,7 @@ snapped_services=(
     plasma-powerdevil
     plasma-krunner
     plasma-ksystemstats
+    plasma-polkit-agent
 )
 for service in "${snapped_services[@]}"; do
     rm "/usr/lib/systemd/user/$service.service"
