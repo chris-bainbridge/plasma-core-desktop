@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+PORTALS_DIR=usr/share/xdg-desktop-portal
+
+if [ ! -d $PORTALS_DIR ]; then
+    echo "$PORTALS_DIR folder is missing"
+    exit 1
+fi
+
+portal_files=(
+    kde-portals.conf
+    kde.portal
+    kwallet.portal
+)
+for portal_file in "${portal_files[@]}"; do
+    if [ ! -f "$PORTALS_DIR/$portal_file" ]; then
+        echo "Missing $portal_file in $PORTALS_DIR"
+        exit 1
+    fi
+done
+

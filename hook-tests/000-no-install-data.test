@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+if [ -d ./install-data ]; then
+    echo "install-data wasn't cleaned up"
+    exit 1
+fi
+

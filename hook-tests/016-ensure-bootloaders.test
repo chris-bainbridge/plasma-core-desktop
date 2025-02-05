@@ -1,7 +1,0 @@
-#!/bin/sh -e
-
-test -d boot/androidboot
-test -d boot/uboot
-test -d boot/grub
-test -d boot/piboot
-

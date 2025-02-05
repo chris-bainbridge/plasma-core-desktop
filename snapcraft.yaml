@@ -1,108 +1,137 @@
-name: plasma-core22-desktop
-# version: "22"
-adopt-info: bootstrap
-summary: Runtime environment based on KDE Neon Core / Ubuntu 22.04
+name: plasma-core24-desktop
+adopt-info: plasma-desktop
+base: core24
+summary: Runtime environment based on KDE Neon Core / Ubuntu 24.04
 description: |
-  The base snap based on KDE Neon Core over the Ubuntu 22.04 release.
-confinement: strict
-type: base
-build-base: core22
-grade: stable
-assumes: [snapd2.55.5]
+  The content snap providing the binaries of a Plasma Session for Ubuntu Core.
 
-architectures:
-  - build-on: amd64
-  - build-on: arm64
+grade: stable
+confinement: strict
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+  arm64:
+    build-on: [arm64]
+    build-for: [arm64]
+
+package-repositories:
+-   type: apt
+    components:
+    - main
+    suites:
+    - noble
+    key-id: 444DABCF3667D0283F894EDDE6D4736255751E5D
+    url: http://origin.archive.neon.kde.org/user
+    key-server: keyserver.ubuntu.com
+
+environment:
+  LD_LIBRARY_PATH: "/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core24-sdk/current/usr/lib:$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
+
+slots:
+  plasma-core24:
+    content: plasma-core24
+    interface: content
+    read: ["."]
 
 parts:
-  probert-deb:
-    plugin: nil
-    build-packages:
-      - apt-utils
-      - devscripts
-    source: https://github.com/canonical/probert.git
-    source-type: git
-    # following branch core/jammy
-    source-commit: 94be2fa3f45e766ecee526fdc0c15f65a78667e6
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
-
-  consoleconf-deb:
-    build-packages:
-      - apt-utils
-      - devscripts
-    plugin: nil
-    source: https://github.com/canonical/subiquity.git
-    source-type: git
-    # following branch core/jammy
-    source-commit: c6452b904798d94d8dea7d00bb84cefbb98e3238
-    override-pull: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" pull
-    override-build: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" build
-    override-stage: |
-      "${CRAFT_PROJECT_DIR}/build-package.sh" stage
-    prime:
-      - -local-debs
-
-  base:
-    plugin: nil
-    source: keyrings
-    build-packages:
-      - wget
-    build-environment:
-      - LTS: jammy
-      - BASE: ${LTS}-base-${CRAFT_TARGET_ARCH}.tar.gz
-      - DIR_URL: https://cdimage.ubuntu.com/ubuntu-base/${LTS}/daily/current
-      - URL: ${DIR_URL}/${BASE}
-      - SHA256: ${DIR_URL}/SHA256SUMS
-      - SIG: ${SHA256}.gpg
-    override-pull: |
-      craftctl default
-      wget "${SHA256}" "${SIG}" "${URL}"
-      gpg --no-default-keyring \
-          --keyring ./cd-image-keying.gpg \
-          --verify SHA256SUMS.gpg SHA256SUMS
-      awk -v "file=${BASE}" '$2=="*"file' SHA256SUMS | sha256sum -c
-    override-build: |
-      mkdir -p "${CRAFT_PART_INSTALL}/base"
-      tar -x --xattrs-include=* -f "${BASE}" -C "${CRAFT_PART_INSTALL}/base"
-    override-stage: |
-      rm -rf "${CRAFT_STAGE}/base"
-      craftctl default
-    override-prime: |
-      # Do nothing
-  splash-theme:
-    plugin: dump
-    source: https://github.com/snapcore/plymouth-theme-ubuntu-core.git
-    source-type: git
-    organize:
-      ubuntu-core: usr/share/plymouth/themes/ubuntu-core
-      copyright: usr/share/doc/plymouth-theme-ubuntu-core/copyright
-    stage:
-      - -README.md
-  bootstrap:
-    after:
-      - probert-deb
-      - consoleconf-deb
-      - base
+  plasma-desktop:
     plugin: make
     source: .
+    build-snaps:
+      - kde-qt6-core24-sdk
+      - kf6-core24-sdk
     build-packages:
+      - cmake
+      - git
+      - libavcodec-dev
+      - libavfilter-dev
+      - libavformat-dev
+      - libboost-all-dev
+      - libcanberra-dev
+      - libdbus-1-dev
+      - libdisplay-info-dev
+      - libdrm-dev
+      - libevdev-dev
+      - libfreetype-dev
+      - libgcrypt20-dev
+      - libgl-dev
+      - libglvnd-dev
+      - libglib2.0-dev
+      - libio-socket-ssl-perl
+      - libjson-xs-perl
+      - liblcms2-dev
+      - libnm-dev
+      - libpam0g-dev
+      - libpipewire-0.3-dev
+      - libproxy-dev
+      - libqalculate-dev
+      - libsensors-dev
+      - libsystemd-dev
+      - libudev-dev
+      - liburi-perl
+      - libwacom-dev
+      - libxcvt-dev
+      - libxkbcommon-dev
+      - libxkbregistry-dev
+      - libyaml-libyaml-perl
+      - modemmanager-dev
+      - ninja-build
       - shellcheck
-      - distro-info
-      - dconf-cli
+      - xorg-dev
+      - xserver-xorg-dev
+      - xserver-xorg-input-libinput-dev
+      - xserver-xorg-input-wacom
+    stage-packages:
+      - libavcodec60
+      - libavfilter9
+      - libavformat60
+      - libcanberra-pulse
+      - libdisplay-info2
+      - libdrm2
+      - libevdev2
+      - libfreetype6
+      - libgcrypt20
+      - libglib2.0-0t64
+      - liblcms2-2
+      - libmm-glib0
+      - libnm0
+      - libpam0g
+      - libpipewire-0.3-0t64
+      - libproxy1v5
+      - libproxy1-plugin-networkmanager
+      - libqalculate22t64
+      - libsensors5
+      - libsystemd0
+      - libudev1
+      - libwacom9
+      - libwayland-cursor0
+      - libwayland-egl1
+      - libxcb-cursor0
+      - libxcvt0
+      - libxkbcommon0
+      - libxkbregistry0
+      - gdb
+      - cgdb
+      - ltrace
+      - strace
+      - pipewire-pulse
+      - pipewire-audio
+      - wireplumber
+      - xserver-xorg-input-libinput
+      - xserver-xorg-input-wacom
+      - xwayland
+    build-environment:
+      - PATH: /snap/kde-qt6-core24-sdk/current/usr/bin:/snap/kde-qt6-core24-sdk/current/usr/bin/qt6:/snap/kf6-core24-sdk/current/usr/bin:${PATH:+:$PATH}
+      - PKG_CONFIG_PATH: /snap/kde-qt6-core24-sdk/current/usr/share/pkgconfig:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kf6-core24-sdk/current/usr/share/pkgconfig:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+      - XDG_DATA_DIRS: $CRAFT_PART_INSTALL/usr/share:/snap/kde-qt6-core24-sdk/current/usr/share:/snap/kf6-core24-sdk/current/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
+      - XDG_CONFIG_DIRS: $CRAFT_PART_INSTALL/etc/xdg:/snap/kde-qt6-core22-sdk/current/etc/xdg:/snap/kf6-core24-sdk/current/etc/xdg:/etc/xdg${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}
+      - LD_LIBRARY_PATH: "/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core24-sdk/current/usr/lib:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kf6-core24-sdk/current/usr/lib:$CRAFT_PART_INSTALL/usr/lib:$CRAFT_PART_INSTALL/lib/:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      - CMAKE_PREFIX_PATH: /snap/kde-qt6-core24-sdk/current/usr:/snap/kf6-core24-sdk/current/usr:$CRAFT_PART_INSTALL/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       craftctl default
     override-prime: |
       craftctl default
-      rm -f /etc/systemd/user/pipewire-session-manager.service
-      # ensure build-in tests are run
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
+
