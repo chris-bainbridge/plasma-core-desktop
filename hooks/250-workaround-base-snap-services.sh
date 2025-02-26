@@ -24,7 +24,7 @@ disabled_units=(
     snap.ubuntu-desktop-session.xdg-desktop-portal-gnome.service
 )
 for unit in "${disabled_units[@]}"; do
-    ln -sf /dev/null "usr/lib/systemd/user/$unit"
+    touch "usr/lib/systemd/user/$unit"
 done
 
 # Make sure we don't pollute xdg-desktop-portal environment

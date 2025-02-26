@@ -10,12 +10,12 @@ if [ ! -d $SYSTEMD_USER_DIR ]; then
 fi
 
 # We allow just a couple we know to be innocuous because they just make a qdbus or dbus-send call
-SERVICE_FILES=`find $SYSTEMD_USER_DIR -maxdepth 1 -type f -name "*.service" | \
+SERVICE_FILES=`find $SYSTEMD_USER_DIR -maxdepth 1 -type f,l -size +0c -name "*.service" | \
     grep -v -E "(plasma-ksplash-ready|plasma-kcminit-phase1|plasma-restoresession)" | \
     cat`
 
 if [ -n "$SERVICE_FILES" ]; then
-    echo "Found service regular files which need to be removed:"
+    echo "Found non-empty service files which need to be removed:"
     echo $SERVICE_FILES
     exit 1
 fi

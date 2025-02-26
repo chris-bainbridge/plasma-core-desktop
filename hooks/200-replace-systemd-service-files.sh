@@ -31,9 +31,9 @@ done
 
 # Services launched at session startup
 rm "usr/lib/systemd/user/plasma-kwin_wayland.service"
-ln -s "/etc/systemd/user/snap.plasma-desktop-session.plasma-kwin-wayland.service" "usr/lib/systemd/user/plasma-kwin_wayland.service"
-mkdir "usr/lib/systemd/user/plasma-kwin_wayland.service.d"
-cat >"usr/lib/systemd/user/plasma-kwin_wayland.service.d/override.conf"<<EOF
+sed -i -E -e "s,plasma-kwin_wayland.service,snap.plasma-desktop-session.plasma-kwin-wayland.service," usr/lib/systemd/user/*.target
+mkdir "usr/lib/systemd/user/snap.plasma-desktop-session.plasma-kwin-wayland.service.d"
+cat >"usr/lib/systemd/user/snap.plasma-desktop-session.plasma-kwin-wayland.service.d/override.conf"<<EOF
 [Unit]
 PartOf=graphical-session.target
 EOF
@@ -53,9 +53,9 @@ snapped_services=(
 )
 for service in "${snapped_services[@]}"; do
     rm "usr/lib/systemd/user/$service.service"
-    ln -s "/etc/systemd/user/snap.plasma-desktop-session.$service.service" "usr/lib/systemd/user/$service.service"
-    mkdir "usr/lib/systemd/user/$service.service.d"
-    cat >"usr/lib/systemd/user/$service.service.d/override.conf"<<EOF
+    sed -i -E -e "s,$service.service,snap.plasma-desktop-session.$service.service," usr/lib/systemd/user/*.target
+    mkdir "usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d"
+    cat >"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
 [Unit]
 PartOf=graphical-session.target
 EOF
@@ -66,9 +66,9 @@ content_provided_services=(
     plasma-kded6
 )
 for service in "${content_provided_services[@]}"; do
-    ln -s "/etc/systemd/user/snap.plasma-desktop-session.$service.service" "usr/lib/systemd/user/$service.service"
-    mkdir "usr/lib/systemd/user/$service.service.d"
-    cat >"usr/lib/systemd/user/$service.service.d/override.conf"<<EOF
+    sed -i -E -e "s,$service.service,snap.plasma-desktop-session.$service.service," usr/lib/systemd/user/*.target
+    mkdir "usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d"
+    cat >"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
 [Unit]
 PartOf=graphical-session.target
 EOF
