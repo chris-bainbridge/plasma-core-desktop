@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+
+folders=(
+    usr/bin
+    usr/share/kglobalaccel
+)
+for folder in "${folders[@]}"; do
+    if [ ! -d $folder ]; then
+        echo "$folder folder is missing"
+        exit 1
+    fi
+
+    ABSOLUTE_SYMLINKS=`ls -l "$folder" | grep "\-> /" | cat`
+
+    if [ -n "$ABSOLUTE_SYMLINKS" ]; then
+        echo "Found absolute symlinks in $folder which need to be removed:"
+        echo $ABSOLUTE_SYMLINKS
+        exit 1
+    fi
+done
+
