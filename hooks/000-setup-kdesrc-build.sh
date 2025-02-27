@@ -45,7 +45,7 @@ module-set plasma-desktop-modules
     repository kde-projects
     cmake-options -DBUILD_WITH_QT6=ON -DBUILD_QT5=OFF
     use-modules workspace
-    ignore-modules discover flatpak-kcm kdecoration oxygen oxygen-sounds breeze breeze-grub breeze-plymouth breeze-gtk kde-gtk-config khotkeys plasma-mobile plasma-settings plasma-bigscreen aura-browser plank-player plasma-remotecontrollers plasma-meetings plasma-disks plasma-firewall plymouth-kcm milou krdp union plasma-keyboard
+    ignore-modules discover flatpak-kcm kdecoration oxygen oxygen-sounds breeze breeze-grub breeze-plymouth breeze-gtk kde-gtk-config khotkeys plasma-mobile plasma-settings plasma-bigscreen aura-browser plank-player plasma-remotecontrollers plasma-meetings plasma-disks plasma-firewall plymouth-kcm milou krdp union plasma-keyboard kwin-x11
     tag $PLASMA_TAG
 end module-set
 
