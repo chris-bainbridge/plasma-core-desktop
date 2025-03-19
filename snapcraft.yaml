@@ -49,6 +49,7 @@ parts:
       - libavformat-dev
       - libboost-all-dev
       - libcanberra-dev
+      - libcanberra-pulse
       - libdbus-1-dev
       - libdisplay-info-dev
       - libdrm-dev
@@ -111,9 +112,6 @@ parts:
       - libxcvt0
       - libxkbcommon0
       - libxkbregistry0
-      - pipewire-pulse
-      - pipewire-audio
-      - wireplumber
       - xserver-xorg-input-libinput
       - xserver-xorg-input-wacom
       - xwayland
@@ -129,5 +127,7 @@ parts:
       craftctl default
     override-prime: |
       craftctl default
+      for i in `dpkg -L pipewire pipewire-pulse | grep -v "^/\.$" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
+      for i in `dpkg -L pipewire-bin | grep -v "^/\.$" | grep -v "usr/share" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
 

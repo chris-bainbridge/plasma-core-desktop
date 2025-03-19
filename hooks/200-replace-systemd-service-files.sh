@@ -9,10 +9,7 @@ removed_services=(
     drkonqi-coredump-launcher@
     drkonqi-coredump-pickup
     drkonqi-sentry-postman
-    filter-chain
     glib-pacrunner
-    pipewire-pulse
-    pipewire
     plasma-baloorunner
     plasma-dolphin
     plasma-kaccess
@@ -22,8 +19,6 @@ removed_services=(
     plasma-kwin_x11
     plasma-xdg-desktop-portal-kde
     session-migration
-    wireplumber
-    wireplumber@
 )
 for service in "${removed_services[@]}"; do
     rm "usr/lib/systemd/user/$service.service"
