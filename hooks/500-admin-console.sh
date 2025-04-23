@@ -1,0 +1,11 @@
+#!/bin/bash -ex
+
+# Add script to run when opening terminal to ssh localhost
+cat >usr/bin/admin-console<<EOF
+#!/bin/bash
+
+ssh -aXq -o PubkeyAuthentication=no -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no localhost
+EOF
+
+chmod a+x usr/bin/admin-console
+
