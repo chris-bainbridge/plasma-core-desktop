@@ -4,4 +4,4 @@
 include:
   - project: sysadmin/ci-utilities
     file:
-      - /gitlab-templates/snap-snapcraft-core-lxd.yml
+      - /gitlab-templates/snap-snapcraft-lxd.yml
