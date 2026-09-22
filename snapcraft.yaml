@@ -97,6 +97,17 @@ parts:
       - xserver-xorg-input-libinput-dev
       - xserver-xorg-input-wacom
     stage-packages:
+      # Breeze's look-and-feel defaults set cursorTheme=breeze_cursors
+      # (kcminputrc), and kwin's cursor-theme fallback chain also ends at
+      # the literal name "breeze_cursors" (Cursor::fallbackThemeName()),
+      # but the "breeze" kde-projects module is deliberately excluded from
+      # the kdesrc-build source build above (see ignore-modules) since
+      # Ubuntu already packages its theme assets. Nothing was staging the
+      # actual breeze-cursor-theme deb though, so every cursor-theme
+      # lookup failed and the pointer was invisible everywhere. Same class
+      # of bug as the missing "Next" wallpaper fixed in
+      # tools/patch-kdesrc-sources.py.
+      - breeze-cursor-theme
       - libavcodec60
       - libavfilter9
       - libavformat60
