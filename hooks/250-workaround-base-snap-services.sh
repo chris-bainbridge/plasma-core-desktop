@@ -34,6 +34,6 @@ cat >"usr/lib/systemd/user/xdg-desktop-portal.service.d/override.conf"<<EOF
 ExecStart=
 ExecStart=/usr/libexec/xdg-desktop-portal --verbose
 UnsetEnvironment=XDG_CONFIG_DIRS XDG_DATA_DIRS LD_LIBRARY_PATH PIPEWIRE_CONFIG_DIR
-Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games" "XDG_DATA_DIRS=/snap/plasma-core24-desktop/current/usr/share:"
+Environment="PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games" "XDG_DATA_DIRS=/snap/plasma-core26-desktop/current/usr/share:"
 EOF
 
