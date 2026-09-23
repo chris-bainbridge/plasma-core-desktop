@@ -28,7 +28,7 @@ for unit in "${disabled_units[@]}"; do
 done
 
 # Make sure we don't pollute xdg-desktop-portal environment
-mkdir "usr/lib/systemd/user/xdg-desktop-portal.service.d"
+mkdir -p "usr/lib/systemd/user/xdg-desktop-portal.service.d"
 cat >"usr/lib/systemd/user/xdg-desktop-portal.service.d/override.conf"<<EOF
 [Service]
 ExecStart=

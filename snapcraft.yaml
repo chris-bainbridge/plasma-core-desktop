@@ -44,6 +44,9 @@ parts:
     build-packages:
       - ccache
       - cmake
+      - corrosion
+      - gcc-14
+      - g++-14
       - git
       - libavcodec-dev
       - libavfilter-dev
@@ -134,15 +137,46 @@ parts:
       - XDG_CONFIG_DIRS: $CRAFT_PART_INSTALL/etc/xdg:/snap/kde-qt6-core24-sdk/current/etc/xdg:/snap/kf6-core24-sdk/current/etc/xdg:/etc/xdg${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}
       - LD_LIBRARY_PATH: "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$CRAFT_PART_INSTALL/usr/lib:$CRAFT_PART_INSTALL/lib/:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core24-sdk/current/usr/lib:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kf6-core24-sdk/current/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
       - CMAKE_PREFIX_PATH: $CRAFT_PART_INSTALL/usr:/snap/kde-qt6-core24-sdk/current/usr:/snap/kf6-core24-sdk/current/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
+      - QML2_IMPORT_PATH: $CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
+      # A previous failed build leaves the KF6 SDK QML module symlinks
+      # (and kdesrc-build's log/latest/* symlinks) under the part install
+      # dir. snapcraft's make plugin scans for symlinks to copy during the
+      # pull phase and chokes (IsADirectoryError) on directory symlinks.
+      # Clean them up here, before that scan runs.
+      PART_INSTALL="${CRAFT_PART_INSTALL:-/root/parts/plasma-desktop/install}"
+      rm -rf "$PART_INSTALL"/install-data/kde/src/log
+      find "$PART_INSTALL"/usr/lib -path "*/qml/*" -type l -delete 2>/dev/null || true
       craftctl default
     override-build: |
       export PATH="/usr/lib/ccache:$PATH"
       export CCACHE_DIR=/root/.ccache
+      # A previous failed build can leave kdesrc-build's per-module log
+      # dir (with log/latest/* directory symlinks) and the KF6 SDK QML
+      # module symlinks under the part install dir. snapcraft's make
+      # plugin later scans for symlinks to copy and chokes
+      # (IsADirectoryError) on those. Drop them before building.
+      # $CRAFT_PART_INSTALL is not reliably exported into this script, so
+      # fall back to the known part install path.
+      PART_INSTALL="${CRAFT_PART_INSTALL:-/root/parts/plasma-desktop/install}"
+      rm -rf "$PART_INSTALL"/install-data/kde/src/log
+      find "$PART_INSTALL"/usr/lib -path "*/qml/*" -type l -delete 2>/dev/null || true
       craftctl default
     override-prime: |
       craftctl default
+      # craft-parts' incremental stage->prime sync copies new/changed files
+      # but does NOT delete files that disappeared from stage/part-install,
+      # so service files removed by hooks/200 in a previous build can
+      # survive as stale copies in the prime dir. Remove them explicitly
+      # here to guarantee prime is clean regardless of stale state.
+      for s in dconf drkonqi-coredump-cleanup drkonqi-coredump-launcher@ \
+        drkonqi-coredump-pickup drkonqi-sentry-postman glib-pacrunner \
+        plasma-baloorunner plasma-dolphin plasma-kaccess plasma-knighttimed \
+        plasma-kscreen-osd plasma-kscreen plasma-kwallet-pam plasma-kwin_x11 \
+        plasma-startupsound plasma-xdg-desktop-portal-kde session-migration; do
+        rm -f "$SNAPCRAFT_PRIME/usr/lib/systemd/user/$s.service"
+      done
       for i in `dpkg -L pipewire pipewire-pulse | grep -v "^/\.$" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       for i in `dpkg -L pipewire-bin | grep -v "^/\.$" | grep -v "usr/share" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
