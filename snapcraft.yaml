@@ -1,4 +1,4 @@
-name: plasma-core24-desktop
+name: plasma-core26-desktop
 adopt-info: plasma-desktop
 base: core26
 summary: Runtime environment based on KDE Neon Core / Ubuntu 26.04
@@ -19,8 +19,8 @@ environment:
   LD_LIBRARY_PATH: "/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core26-sdk/current/usr/lib:$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
 
 slots:
-  plasma-core24:
-    content: plasma-core24
+  plasma-core26:
+    content: plasma-core26
     interface: content
     read: ["."]
 
