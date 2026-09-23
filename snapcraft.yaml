@@ -53,6 +53,31 @@ parts:
       mkdir -p /snap/kde-qt6-core26-sdk /snap/kf6-core26-sdk
       ln -sfn "$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk" /snap/kde-qt6-core26-sdk/current
       ln -sfn "$CRAFT_STAGE/sdk-stage/kf6-core26-sdk" /snap/kf6-core26-sdk/current
+
+      # kwin 6.7.5 requires two protocol updates from wayland-protocols 1.48
+      # that Ubuntu 26.04's archive package (1.47) doesn't ship (see
+      # tools/patch-kdesrc-sources.py for the matching CMake version relax).
+      # Vendor just the two affected protocol XMLs into the staged SDK's
+      # wayland-protocols datadir; see vendor/wayland-protocols/README.md.
+      session_mgmt_dir="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/share/wayland-protocols/staging/xdg-session-management"
+      mkdir -p "$session_mgmt_dir"
+      cp "$CRAFT_PROJECT_DIR/vendor/wayland-protocols/staging/xdg-session-management/xdg-session-management-v1.xml" "$session_mgmt_dir/"
+
+      text_input_dir="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/share/wayland-protocols/unstable/text-input"
+      cp "$CRAFT_PROJECT_DIR/vendor/wayland-protocols/unstable/text-input/text-input-unstable-v3.xml" "$text_input_dir/"
+
+      # GCC 15 / Ubuntu 26.04's libspa-0.2-dev ships a json-core.h that
+      # calls bare isnormal()/isinf()/signbit() relying on <math.h> macros;
+      # when a translation unit already included <cmath> earlier (e.g. via
+      # Qt's qnumeric.h), glibc's include guard suppresses the macros and
+      # the build fails with "was not declared in this scope" in kpipewire
+      # and other pipewire-using modules. Pull the names into the global
+      # namespace under C++ via <cmath>'s std:: overloads instead.
+      json_core_h="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/include/spa-0.2/spa/utils/json-core.h"
+      if ! grep -q "using std::isnormal;" "$json_core_h"; then
+        grep -q '#ifdef __cplusplus' "$json_core_h"
+        perl -0777 -pi -e 's/#ifdef __cplusplus\nextern "C" \{\n/#ifdef __cplusplus\n#include <cmath>\nusing std::isnormal;\nusing std::isinf;\nusing std::signbit;\nextern "C" {\n/' "$json_core_h"
+      fi
   plasma-desktop:
     plugin: make
     source: .
