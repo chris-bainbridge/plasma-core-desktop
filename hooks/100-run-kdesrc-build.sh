@@ -15,9 +15,8 @@ trap cleanup_log EXIT
 
 install-data/kdesrc-build/kdesrc-build --rc-file=./install-data/kdesrc-buildrc --src-only
 
-# Forward-port patches for Plasma 6.7.5 against the core24 build env
-# (e.g. PipeWire 1.2.6 vs the 1.4+ that 6.7.5 targets). See
-# tools/patch-kdesrc-sources.py.
+# Forward-port patches for Plasma 6.7.5 against the core26 build env
+# (kameleon Rust-helper removal). See tools/patch-kdesrc-sources.py.
 python3 "$CRAFT_PROJECT_DIR"/tools/patch-kdesrc-sources.py
 
 install-data/kdesrc-build/kdesrc-build --rc-file=./install-data/kdesrc-buildrc --no-src

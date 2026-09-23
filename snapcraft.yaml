@@ -1,7 +1,7 @@
 name: plasma-core24-desktop
 adopt-info: plasma-desktop
-base: core24
-summary: Runtime environment based on KDE Neon Core / Ubuntu 24.04
+base: core26
+summary: Runtime environment based on KDE Neon Core / Ubuntu 26.04
 description: |
   The content snap providing the binaries of a Plasma Session for Ubuntu Core.
 
@@ -15,18 +15,8 @@ platforms:
     build-on: [arm64]
     build-for: [arm64]
 
-package-repositories:
--   type: apt
-    components:
-    - main
-    suites:
-    - noble
-    key-id: 444DABCF3667D0283F894EDDE6D4736255751E5D
-    url: http://origin.archive.neon.kde.org/user
-    key-server: keyserver.ubuntu.com
-
 environment:
-  LD_LIBRARY_PATH: "/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core24-sdk/current/usr/lib:$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
+  LD_LIBRARY_PATH: "/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core26-sdk/current/usr/lib:$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
 
 slots:
   plasma-core24:
@@ -35,16 +25,42 @@ slots:
     read: ["."]
 
 parts:
+  # Stage the locally-built core26 SDK snaps (kde-qt6-core26-sdk,
+  # kf6-core26-sdk) into the part stage and expose them at their
+  # canonical /snap/<name>/current paths inside the build container.
+  # These SDKs are NOT in the Snap Store, so build-snaps: cannot
+  # resolve them; the dump part replaces that mechanism.
+  sdk-stage:
+    plugin: dump
+    source: .sdk/
+    organize:
+      '*': 'sdk-stage/'
+    # The SDKs are build-time only; keep their staged content out of the
+    # final snap (the /snap/<name>/current symlinks are what consumers use).
+    prime:
+      - -*
+    override-stage: |
+      craftctl default
+      # craft-parts normalizes every staged .pc file, prepending the stage
+      # dir to prefix= (e.g. /snap/kde-qt6-core26-sdk/current/usr ->
+      # /root/stage/snap/kde-qt6-core26-sdk/current/usr). Mirror the
+      # kf6-core-sdk pattern: symlink $CRAFT_STAGE/snap/<name>/current to
+      # the staged SDK so those re-rooted paths resolve. Also expose the
+      # canonical /snap/<name>/current paths for the hooks/build env.
+      mkdir -p "$CRAFT_STAGE/snap/kde-qt6-core26-sdk" "$CRAFT_STAGE/snap/kf6-core26-sdk"
+      ln -sfn "$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk" "$CRAFT_STAGE/snap/kde-qt6-core26-sdk/current"
+      ln -sfn "$CRAFT_STAGE/sdk-stage/kf6-core26-sdk" "$CRAFT_STAGE/snap/kf6-core26-sdk/current"
+      mkdir -p /snap/kde-qt6-core26-sdk /snap/kf6-core26-sdk
+      ln -sfn "$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk" /snap/kde-qt6-core26-sdk/current
+      ln -sfn "$CRAFT_STAGE/sdk-stage/kf6-core26-sdk" /snap/kf6-core26-sdk/current
   plasma-desktop:
     plugin: make
     source: .
-    build-snaps:
-      - kde-qt6-core24-sdk
-      - kf6-core24-sdk
+    after:
+      - sdk-stage
     build-packages:
       - ccache
       - cmake
-      - corrosion
       - gcc-14
       - g++-14
       - git
@@ -86,12 +102,12 @@ parts:
       - libxcvt-dev
       - libxkbcommon-dev
       - libxkbregistry-dev
+      - libxslt1.1
       - libyaml-libyaml-perl
       - modemmanager-dev
       - ninja-build
-      - qt6-base-private-dev
-      - qt6-wayland-private-dev
       - shellcheck
+      - systemd-dev
       - xorg-dev
       - xserver-xorg-dev
       - xserver-xorg-input-libinput-dev
@@ -108,11 +124,11 @@ parts:
       # of bug as the missing "Next" wallpaper fixed in
       # tools/patch-kdesrc-sources.py.
       - breeze-cursor-theme
-      - libavcodec60
-      - libavfilter9
-      - libavformat60
+      - libavcodec62
+      - libavfilter11
+      - libavformat62
       - libcanberra-pulse
-      - libdisplay-info2
+      - libdisplay-info3
       - libdrm2
       - libevdev2
       - libfreetype6
@@ -125,8 +141,7 @@ parts:
       - libpam0g
       - libpipewire-0.3-0t64
       - libproxy1v5
-      - libproxy1-plugin-networkmanager
-      - libqalculate22t64
+      - libqalculate23
       - libssh-4
       - libsensors5
       - libsystemd0
@@ -142,13 +157,13 @@ parts:
       - xserver-xorg-input-wacom
       - xwayland
     build-environment:
-      - PATH: /snap/kde-qt6-core24-sdk/current/usr/bin:/snap/kde-qt6-core24-sdk/current/usr/bin/qt6:/snap/kf6-core24-sdk/current/usr/bin:${PATH:+:$PATH}
-      - PKG_CONFIG_PATH: $CRAFT_PART_INSTALL/usr/share/pkgconfig:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kde-qt6-core24-sdk/current/usr/share/pkgconfig:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kf6-core24-sdk/current/usr/share/pkgconfig:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
-      - XDG_DATA_DIRS: $CRAFT_PART_INSTALL/usr/share:/snap/kde-qt6-core24-sdk/current/usr/share:/snap/kf6-core24-sdk/current/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
-      - XDG_CONFIG_DIRS: $CRAFT_PART_INSTALL/etc/xdg:/snap/kde-qt6-core24-sdk/current/etc/xdg:/snap/kf6-core24-sdk/current/etc/xdg:/etc/xdg${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}
-      - LD_LIBRARY_PATH: "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$CRAFT_PART_INSTALL/usr/lib:$CRAFT_PART_INSTALL/lib/:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core24-sdk/current/usr/lib:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kf6-core24-sdk/current/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-      - CMAKE_PREFIX_PATH: $CRAFT_PART_INSTALL/usr:/snap/kde-qt6-core24-sdk/current/usr:/snap/kf6-core24-sdk/current/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
-      - QML2_IMPORT_PATH: $CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kf6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kde-qt6-core24-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
+      - PATH: /snap/kde-qt6-core26-sdk/current/usr/bin:/snap/kde-qt6-core26-sdk/current/usr/bin/qt6:/snap/kf6-core26-sdk/current/usr/bin:${PATH:+:$PATH}
+      - PKG_CONFIG_PATH: $CRAFT_PART_INSTALL/usr/share/pkgconfig:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kde-qt6-core26-sdk/current/usr/share/pkgconfig:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kf6-core26-sdk/current/usr/share/pkgconfig:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
+      - XDG_DATA_DIRS: $CRAFT_PART_INSTALL/usr/share:/snap/kde-qt6-core26-sdk/current/usr/share:/snap/kf6-core26-sdk/current/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
+      - XDG_CONFIG_DIRS: $CRAFT_PART_INSTALL/etc/xdg:/snap/kde-qt6-core26-sdk/current/etc/xdg:/snap/kf6-core26-sdk/current/etc/xdg:/etc/xdg${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}
+      - LD_LIBRARY_PATH: "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$CRAFT_PART_INSTALL/usr/lib:$CRAFT_PART_INSTALL/lib/:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core26-sdk/current/usr/lib:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kf6-core26-sdk/current/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+      - CMAKE_PREFIX_PATH: $CRAFT_PART_INSTALL/usr:/snap/kde-qt6-core26-sdk/current/usr:/snap/kf6-core26-sdk/current/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
+      - QML2_IMPORT_PATH: $CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
     override-pull: |
       craftctl set version="$(/bin/date +%Y%m%d)"
       # A previous failed build leaves the KF6 SDK QML module symlinks
@@ -185,7 +200,8 @@ parts:
         drkonqi-coredump-pickup drkonqi-sentry-postman glib-pacrunner \
         plasma-baloorunner plasma-dolphin plasma-kaccess plasma-knighttimed \
         plasma-kscreen-osd plasma-kscreen plasma-kwallet-pam plasma-kwin_x11 \
-        plasma-startupsound plasma-xdg-desktop-portal-kde session-migration; do
+        plasma-startupsound plasma-xdg-desktop-portal-kde session-migration \
+        user-session-migration; do
         rm -f "$SNAPCRAFT_PRIME/usr/lib/systemd/user/$s.service"
       done
       for i in `dpkg -L pipewire pipewire-pulse | grep -v "^/\.$" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done

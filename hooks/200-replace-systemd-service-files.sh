@@ -21,6 +21,7 @@ removed_services=(
     plasma-startupsound
     plasma-xdg-desktop-portal-kde
     session-migration
+    user-session-migration
 )
 for service in "${removed_services[@]}"; do
     rm -f "usr/lib/systemd/user/$service.service"
@@ -117,7 +118,39 @@ qdbus_oneshot_services=(
 )
 for service in "${qdbus_oneshot_services[@]}"; do
     [ -f "usr/lib/systemd/user/$service.service" ] || continue
-    sed -i -E -e 's,/snap/kde-qt6-core.*?-sdk/current/usr/bin/qt6,/snap/kf6-core24/current/usr/bin/qt6,' "usr/lib/systemd/user/$service.service"
+    # The kdesrc-build substitutes the build-tree path for the qdbus
+    # binary (e.g. /root/stage/sdk-stage/kde-qt6-core26-sdk/usr/bin/qt6/qdbus),
+    # which does not exist at runtime. Rewrite it to the kf6-core26
+    # content snap's runtime path, and fix the LD_LIBRARY_PATH to the same
+    # content snap (the old kf6-core24 name is stale and not mounted).
+    sed -i -E \
+        -e 's,/root/stage/sdk-stage/kde-qt6-core26-sdk/usr/bin/qt6,/snap/kf6-core26/current/usr/bin/qt6,' \
+        -e 's,/snap/kf6-core24/current/usr/lib/x86_64-linux-gnu/,/snap/kf6-core26/current/usr/lib/x86_64-linux-gnu/,' \
+        "usr/lib/systemd/user/$service.service"
     echo >> "usr/lib/systemd/user/$service.service"
-    echo 'Environment="LD_LIBRARY_PATH=/snap/kf6-core24/current/usr/lib/x86_64-linux-gnu/"' >> "usr/lib/systemd/user/$service.service"
+    echo 'Environment="LD_LIBRARY_PATH=/snap/kf6-core26/current/usr/lib/x86_64-linux-gnu/"' >> "usr/lib/systemd/user/$service.service"
 done
+
+# Break the systemd ordering deadlock that leaves the desktop black.
+# plasma-workspace.target BindsTo=graphical-session.target, and BindsTo=
+# on a target implies an implicit After= edge, so plasma-workspace.target
+# waits for graphical-session.target to be active. But it also declares
+# Before=graphical-session.target, which makes graphical-session.target
+# wait for plasma-workspace.target in return. With nothing else pulling
+# graphical-session.target in first (on stock KDE the display
+# manager/session bootstrap activates it before startplasma runs; in the
+# confined snap path nothing does), systemd deadlocks: graphical-session.target
+# waits for plasma-workspace.target, which waits for plasma-core.target,
+# which waits for plasmashell, which blocks on the xdg-desktop-portal
+# service, which waits for graphical-session.target. Neither target ever
+# activates and the desktop stays black.
+# Dropping the explicit Before=graphical-session.target breaks the cycle
+# deterministically: graphical-session.target then activates as a plain
+# dependency (Requires=) of plasma-workspace.target, the portal starts,
+# plasmashell's portal calls succeed, and the workspace chain completes.
+# The BindsTo= cleanup binding (workspace stops when the session ends) is
+# kept; the only lost ordering is that graphical-session.target is
+# reached before the workspace services are fully up, which nothing
+# depends on here (restoresession/xdg-desktop-autostart still order after
+# plasma-workspace.target via its remaining Before= entries).
+sed -i -E '/^Before=graphical-session\.target$/d' "usr/lib/systemd/user/plasma-workspace.target"

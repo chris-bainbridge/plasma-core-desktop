@@ -79,7 +79,7 @@ end module-set
 EOF
 
 # Make sure qmake is seen
-ln -sf /snap/kde-qt6-core24-sdk/usr/bin/qt6/qmake /usr/bin/
+ln -sf /snap/kde-qt6-core26-sdk/usr/bin/qt6/qmake /usr/bin/
 
 # Needed for xmllint to work properly
 for i in declaration entities ; do
@@ -90,13 +90,13 @@ for i in declaration entities ; do
     fi
 done
 for i in declaration docbook entities qaml svg ; do
-    ln -sf "/snap/kf6-core24-sdk/current/usr/share/xml/$i" /usr/share/xml/
+    ln -sf "/snap/kf6-core26-sdk/current/usr/share/xml/$i" /usr/share/xml/
 done
 
 # Needed for QCA to be found during build
-ln -sf /snap/kf6-core24-sdk/current/usr/bin/qcatool-qt6 /usr/bin/
-ln -sf /snap/kf6-core24-sdk/current/usr/include/Qca-qt6 /usr/include/
-for i in /snap/kf6-core24-sdk/current/usr/lib/libqca-qt6.so* ; do
+ln -sf /snap/kf6-core26-sdk/current/usr/bin/qcatool-qt6 /usr/bin/
+ln -sf /snap/kf6-core26-sdk/current/usr/include/Qca-qt6 /usr/include/
+for i in /snap/kf6-core26-sdk/current/usr/lib/libqca-qt6.so* ; do
     ln -sf "$i" /usr/lib/
 done
 
@@ -118,7 +118,7 @@ done
 # namespace is what caused the "already been used for type registration"
 # black-screen failure. Leave that subdir for the Plasma build to create.
 QML_TRIPLET="$(gcc -print-multiarch 2>/dev/null || echo x86_64-linux-gnu)"
-KF6_QML="/snap/kf6-core24-sdk/current/usr/lib/${QML_TRIPLET}/qml"
+KF6_QML="/snap/kf6-core26-sdk/current/usr/lib/${QML_TRIPLET}/qml"
 INSTALL_QML="$PWD/usr/lib/${QML_TRIPLET}/qml"
 mkdir -p "$INSTALL_QML/org/kde"
 rm -rf "/usr/lib/${QML_TRIPLET}/qml"
@@ -133,7 +133,7 @@ for i in "$KF6_QML"/org/kde/* ; do
     # (e.g. libplasma installs kirigami/styles/Plasma/ into kirigami), so
     # the KF6 dirs must be real/writable, not symlinks into the read-only
     # SDK snap. The 999 hook removes these copies before the snap is
-    # finalised (the kf6-core24 runtime snap provides them at runtime).
+    # finalised (the kf6-core26 runtime snap provides them at runtime).
     rm -rf "$INSTALL_QML/org/kde/$name"
     cp -a "$i" "$INSTALL_QML/org/kde/$name"
 done
