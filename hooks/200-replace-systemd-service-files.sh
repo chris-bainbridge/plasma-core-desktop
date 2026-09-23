@@ -52,6 +52,7 @@ for service in "${snapped_services[@]}"; do
     mkdir "usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d"
     cat >"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
 [Unit]
+After=snap.plasma-desktop-session.plasma-kwin-wayland.service
 PartOf=graphical-session.target
 EOF
 done
@@ -65,9 +66,47 @@ for service in "${content_provided_services[@]}"; do
     mkdir "usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d"
     cat >"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
 [Unit]
+After=snap.plasma-desktop-session.plasma-kwin-wayland.service
 PartOf=graphical-session.target
 EOF
 done
+
+kwin_restart_services=(
+    plasma-kactivitymanagerd
+    plasma-kded6
+    plasma-ksmserver
+    plasma-plasmashell
+    plasma-powerdevil
+)
+for service in "${kwin_restart_services[@]}"; do
+    cat >>"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
+[Unit]
+PartOf=snap.plasma-desktop-session.plasma-kwin-wayland.service
+EOF
+done
+
+long_start_services=(
+    plasma-kactivitymanagerd
+    plasma-kded6
+    plasma-ksmserver
+    plasma-plasmashell
+    plasma-powerdevil
+)
+for service in "${long_start_services[@]}"; do
+    cat >>"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"<<EOF
+[Service]
+TimeoutStartSec=180
+EOF
+done
+
+mkdir -p "usr/lib/systemd/user/snap.plasma-desktop-session.xdg-desktop-portal-kde.service.d"
+cat >"usr/lib/systemd/user/snap.plasma-desktop-session.xdg-desktop-portal-kde.service.d/override.conf"<<EOF
+[Unit]
+After=snap.plasma-desktop-session.plasma-kwin-wayland.service
+PartOf=graphical-session.target snap.plasma-desktop-session.plasma-kwin-wayland.service
+[Service]
+TimeoutStartSec=180
+EOF
 
 qdbus_oneshot_services=(
     plasma-kcminit-phase1
@@ -79,4 +118,3 @@ for service in "${qdbus_oneshot_services[@]}"; do
     echo >> "usr/lib/systemd/user/$service.service"
     echo 'Environment="LD_LIBRARY_PATH=/snap/kf6-core24/current/usr/lib/x86_64-linux-gnu/"' >> "usr/lib/systemd/user/$service.service"
 done
-

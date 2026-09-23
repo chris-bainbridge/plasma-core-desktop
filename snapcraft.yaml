@@ -102,6 +102,7 @@ parts:
       - libdrm2
       - libevdev2
       - libfreetype6
+      - libgbm1
       - libgcrypt20
       - libglib2.0-0t64
       - liblcms2-2
