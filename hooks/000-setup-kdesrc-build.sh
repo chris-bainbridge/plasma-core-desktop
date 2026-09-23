@@ -24,7 +24,7 @@ global
     num-cores-low-mem $(nproc)
 
     install-session-driver false
-    install-environment-driver true
+    install-environment-driver false
 end global
 
 module xwaylandvideobridge
@@ -45,7 +45,7 @@ module-set plasma-desktop-modules
     repository kde-projects
     cmake-options -DBUILD_WITH_QT6=ON -DBUILD_QT5=OFF
     use-modules workspace
-    ignore-modules discover flatpak-kcm kdecoration oxygen oxygen-sounds breeze breeze-grub breeze-plymouth breeze-gtk kde-gtk-config khotkeys plasma-mobile plasma-settings plasma-bigscreen aura-browser plank-player plasma-remotecontrollers plasma-meetings plasma-disks plasma-firewall plymouth-kcm milou krdp union plasma-keyboard kwin-x11
+    ignore-modules discover flatpak-kcm oxygen oxygen-sounds breeze breeze-grub breeze-plymouth breeze-gtk kde-gtk-config khotkeys knighttime kup plasma-mobile plasma-settings plasma-bigscreen aura-browser plank-player plasma-login-manager plasma-remotecontrollers plasma-meetings plasma-disks plasma-firewall plasma-setup plymouth-kcm milou krdp spectacle union plasma-keyboard kwin-x11
     tag $PLASMA_TAG
 end module-set
 
@@ -69,7 +69,11 @@ ln -sf /snap/kde-qt6-core24-sdk/usr/bin/qt6/qmake /usr/bin/
 
 # Needed for xmllint to work properly
 for i in declaration entities ; do
-    rmdir "/usr/share/xml/$i"
+    if [ -L "/usr/share/xml/$i" ] || [ -f "/usr/share/xml/$i" ]; then
+        rm -f "/usr/share/xml/$i"
+    elif [ -d "/usr/share/xml/$i" ]; then
+        rmdir "/usr/share/xml/$i"
+    fi
 done
 for i in declaration docbook entities qaml svg ; do
     ln -sf "/snap/kf6-core24-sdk/current/usr/share/xml/$i" /usr/share/xml/
@@ -81,4 +85,3 @@ ln -sf /snap/kf6-core24-sdk/current/usr/include/Qca-qt6 /usr/include/
 for i in /snap/kf6-core24-sdk/current/usr/lib/libqca-qt6.so* ; do
     ln -sf "$i" /usr/lib/
 done
-
