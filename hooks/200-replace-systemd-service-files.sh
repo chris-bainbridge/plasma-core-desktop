@@ -26,6 +26,14 @@ removed_services=(
 for service in "${removed_services[@]}"; do
     rm -f "usr/lib/systemd/user/$service.service"
 done
+# The Sentry sender service is intentionally omitted because its runtime
+# dependencies are not included in this content snap. Remove its path and
+# timer triggers as well so systemd does not try to start a nonexistent
+# service for users with pending crash envelopes.
+for unit in drkonqi-sentry-postman.path drkonqi-sentry-postman.timer; do
+    rm -f "usr/lib/systemd/user/$unit"
+    find usr/lib/systemd/user -type l -name "$unit" -delete
+done
 
 # Services launched at session startup
 rm -f "usr/lib/systemd/user/plasma-kwin_wayland.service"
@@ -58,6 +66,10 @@ for service in "${snapped_services[@]}"; do
 After=snap.plasma-desktop-session.plasma-kwin-wayland.service
 PartOf=graphical-session.target
 EOF
+    if [ "$service" = plasma-polkit-agent ]; then
+        printf '%s\n' 'ConditionUser=!sddm' \
+            >>"usr/lib/systemd/user/snap.plasma-desktop-session.$service.service.d/override.conf"
+    fi
 done
 
 # Services provided by the kf6 content snap

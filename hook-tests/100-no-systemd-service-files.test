@@ -20,3 +20,19 @@ if [ -n "$SERVICE_FILES" ]; then
     exit 1
 fi
 
+for unit in drkonqi-sentry-postman.path drkonqi-sentry-postman.timer; do
+    if [ -e "$SYSTEMD_USER_DIR/$unit" ] || [ -L "$SYSTEMD_USER_DIR/$unit" ]; then
+        echo "Found orphaned crash reporter unit: $SYSTEMD_USER_DIR/$unit"
+        exit 1
+    fi
+    if find "$SYSTEMD_USER_DIR" -type l -name "$unit" | grep -q .; then
+        echo "Found enabled link for orphaned crash reporter unit: $unit"
+        exit 1
+    fi
+done
+
+POLKIT_OVERRIDE="$SYSTEMD_USER_DIR/snap.plasma-desktop-session.plasma-polkit-agent.service.d/override.conf"
+if ! grep -qx 'ConditionUser=!sddm' "$POLKIT_OVERRIDE"; then
+    echo "The polkit agent must not start in the SDDM greeter user manager"
+    exit 1
+fi

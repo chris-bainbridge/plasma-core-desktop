@@ -237,6 +237,10 @@ parts:
         user-session-migration; do
         rm -f "$SNAPCRAFT_PRIME/usr/lib/systemd/user/$s.service"
       done
+      for unit in drkonqi-sentry-postman.path drkonqi-sentry-postman.timer; do
+        rm -f "$SNAPCRAFT_PRIME/usr/lib/systemd/user/$unit"
+        find "$SNAPCRAFT_PRIME/usr/lib/systemd/user" -type l -name "$unit" -delete
+      done
       for i in `dpkg -L pipewire pipewire-pulse | grep -v "^/\.$" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       for i in `dpkg -L pipewire-bin | grep -v "^/\.$" | grep -v "usr/share" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}

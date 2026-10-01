@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+module_dir="$(find usr/lib -type d -path '*/qml/org/kde/milou' -print -quit)"
+if [ -z "$module_dir" ]; then
+    echo "The org.kde.milou QML module is missing"
+    exit 1
+fi
