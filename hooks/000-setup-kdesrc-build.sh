@@ -16,7 +16,7 @@ rm -rf install-data/kdesrc-build install-data/kdesrc-buildrc
 # cleanup hook ran. Drop the stale log dir so it can't trip that up.
 rm -rf install-data/kde/src/log
 
-git clone https://invent.kde.org/sdk/kdesrc-build.git install-data/kdesrc-build
+git clone --depth 1 https://invent.kde.org/sdk/kdesrc-build.git install-data/kdesrc-build
 
 PLASMA_TAG=v6.7.5
 
