@@ -1,9 +1,19 @@
 name: plasma-core26-desktop
-adopt-info: plasma-desktop
+adopt-info: plasma-debs
 base: core26
 summary: Runtime environment based on KDE Neon Core / Ubuntu 26.04
 description: |
   The content snap providing the binaries of a Plasma Session for Ubuntu Core.
+
+  Since the deb-repack conversion this snap stages runtime packages from
+  the KDE Neon unstable/resolute apt suite (the same version train the
+  previous kdesrc-build source build produced: Qt 6.11.1 / KF6 6.30 /
+  Plasma 6.7.5) instead of compiling Plasma from source. The package set
+  was derived by mapping the file inventory of the last from-source
+  build onto the suite's Contents index, so it stages exactly what the
+  source build used to install. KF6/Qt runtime libraries are pruned at
+  stage time -- the kf6-core26 content snap provides them at runtime
+  (same split the source build had).
 
 grade: stable
 confinement: strict
@@ -11,12 +21,13 @@ platforms:
   amd64:
     build-on: [amd64]
     build-for: [amd64]
-  arm64:
-    build-on: [arm64]
-    build-for: [arm64]
+
+# arm64 dropped on this branch: Neon's unstable/resolute suite has
+# incomplete arm64 coverage (no kwin/plasma binaries). The desktop/26
+# from-source branch keeps arm64.
 
 environment:
-  LD_LIBRARY_PATH: "/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core26-sdk/current/usr/lib:$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
+  LD_LIBRARY_PATH: "$SNAP/usr/lib:$SNAP/lib/:$SNAP/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/usr/lib:/lib"
 
 slots:
   plasma-core26:
@@ -24,206 +35,238 @@ slots:
     interface: content
     read: ["."]
 
+package-repositories:
+-   type: apt
+    components:
+    - main
+    suites:
+    - resolute
+    key-id: 444DABCF3667D0283F894EDDE6D4736255751E5D
+    key-server: keyserver.ubuntu.com
+    url: http://origin.archive.neon.kde.org/unstable
+
 parts:
-  # Stage the locally-built core26 SDK snaps (kde-qt6-core26-sdk,
-  # kf6-core26-sdk) into the part stage and expose them at their
-  # canonical /snap/<name>/current paths inside the build container.
-  # These SDKs are NOT in the Snap Store, so build-snaps: cannot
-  # resolve them; the dump part replaces that mechanism.
-  sdk-stage:
-    plugin: dump
-    source: .sdk/
-    organize:
-      '*': 'sdk-stage/'
-    # The SDKs are build-time only; keep their staged content out of the
-    # final snap (the /snap/<name>/current symlinks are what consumers use).
-    prime:
-      - -*
-    override-stage: |
-      craftctl default
-      # craft-parts normalizes every staged .pc file, prepending the stage
-      # dir to prefix= (e.g. /snap/kde-qt6-core26-sdk/current/usr ->
-      # /root/stage/snap/kde-qt6-core26-sdk/current/usr). Mirror the
-      # kf6-core-sdk pattern: symlink $CRAFT_STAGE/snap/<name>/current to
-      # the staged SDK so those re-rooted paths resolve. Also expose the
-      # canonical /snap/<name>/current paths for the hooks/build env.
-      mkdir -p "$CRAFT_STAGE/snap/kde-qt6-core26-sdk" "$CRAFT_STAGE/snap/kf6-core26-sdk"
-      ln -sfn "$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk" "$CRAFT_STAGE/snap/kde-qt6-core26-sdk/current"
-      ln -sfn "$CRAFT_STAGE/sdk-stage/kf6-core26-sdk" "$CRAFT_STAGE/snap/kf6-core26-sdk/current"
-      mkdir -p /snap/kde-qt6-core26-sdk /snap/kf6-core26-sdk
-      ln -sfn "$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk" /snap/kde-qt6-core26-sdk/current
-      ln -sfn "$CRAFT_STAGE/sdk-stage/kf6-core26-sdk" /snap/kf6-core26-sdk/current
-
-      # kwin 6.7.5 requires two protocol updates from wayland-protocols 1.48
-      # that Ubuntu 26.04's archive package (1.47) doesn't ship (see
-      # tools/patch-kdesrc-sources.py for the matching CMake version relax).
-      # Vendor just the two affected protocol XMLs into the staged SDK's
-      # wayland-protocols datadir; see vendor/wayland-protocols/README.md.
-      session_mgmt_dir="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/share/wayland-protocols/staging/xdg-session-management"
-      mkdir -p "$session_mgmt_dir"
-      cp "$CRAFT_PROJECT_DIR/vendor/wayland-protocols/staging/xdg-session-management/xdg-session-management-v1.xml" "$session_mgmt_dir/"
-
-      text_input_dir="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/share/wayland-protocols/unstable/text-input"
-      cp "$CRAFT_PROJECT_DIR/vendor/wayland-protocols/unstable/text-input/text-input-unstable-v3.xml" "$text_input_dir/"
-
-      # GCC 15 / Ubuntu 26.04's libspa-0.2-dev ships a json-core.h that
-      # calls bare isnormal()/isinf()/signbit() relying on <math.h> macros;
-      # when a translation unit already included <cmath> earlier (e.g. via
-      # Qt's qnumeric.h), glibc's include guard suppresses the macros and
-      # the build fails with "was not declared in this scope" in kpipewire
-      # and other pipewire-using modules. Pull the names into the global
-      # namespace under C++ via <cmath>'s std:: overloads instead.
-      json_core_h="$CRAFT_STAGE/sdk-stage/kde-qt6-core26-sdk/usr/include/spa-0.2/spa/utils/json-core.h"
-      if ! grep -q "using std::isnormal;" "$json_core_h"; then
-        grep -q '#ifdef __cplusplus' "$json_core_h"
-        perl -0777 -pi -e 's/#ifdef __cplusplus\nextern "C" \{\n/#ifdef __cplusplus\n#include <cmath>\nusing std::isnormal;\nusing std::isinf;\nusing std::signbit;\nextern "C" {\n/' "$json_core_h"
-      fi
-  plasma-desktop:
-    plugin: make
-    source: .
-    after:
-      - sdk-stage
+  plasma-debs:
+    plugin: nil
     build-packages:
-      - ccache
-      - cmake
-      - gcc-14
-      - g++-14
-      - git
-      - libavcodec-dev
-      - libavfilter-dev
-      - libavformat-dev
-      - libboost-all-dev
-      - libcanberra-dev
-      - libcanberra-pulse
-      - libdbus-1-dev
-      - libdisplay-info-dev
-      - libdrm-dev
-      - libevdev-dev
-      - libfreetype-dev
-      - libgcrypt20-dev
-      - libgl-dev
-      - libglvnd-dev
-      - libglib2.0-dev
-      - libio-socket-ssl-perl
-      - libjson-xs-perl
-      - liblcms2-dev
-      - libnm-dev
-      - libpam0g-dev
-      - libpipewire-0.3-dev
-      - libproxy-dev
-      - libqalculate-dev
-      - libssh-dev
-      - libsensors-dev
-      - libsm-dev
-      - libsystemd-dev
-      - libudev-dev
-      - liburi-perl
-      - libwacom-dev
-      - libx11-xcb-dev
-      - libxcb-composite0-dev
-      - libxcb-damage0-dev
-      - libxcb-shape0-dev
-      - libxcb-xfixes0-dev
-      - libxcvt-dev
-      - libxkbcommon-dev
-      - libxkbregistry-dev
-      - libxslt1.1
-      - libyaml-libyaml-perl
-      - modemmanager-dev
-      - ninja-build
-      - shellcheck
-      - systemd-dev
-      - xorg-dev
-      - xserver-xorg-dev
-      - xserver-xorg-input-libinput-dev
-      - xserver-xorg-input-wacom
+      # make/test for hook-tests; pipewire trio so the override-prime
+      # `dpkg -L` prune resolves exactly as it did in the source build
+      - make
+      - pipewire
+      - pipewire-pulse
+      - pipewire-bin
+    # Unpinned on purpose: floating tracks Neon latest so security fixes
+    # arrive automatically; the image build snapshots whatever the suite
+    # had at build time. A temporary `=` pin is the emergency brake if a
+    # Neon rollout breaks this build. go-build-kde checks the resolved
+    # Qt/KF6 versions against kf6-core26 to catch cross-snap skew.
+    #
+    # The Neon portion was derived by mapping the last source-built
+    # snap's inventory onto the Neon suite's Contents index; the resolute
+    # portion carries over the system-library stage-packages the source
+    # build used. Discover is deliberately NOT staged (the source build
+    # ignored it too); xwaylandvideobridge is dropped (Neon doesn't
+    # package it).
     stage-packages:
-      # Breeze's look-and-feel defaults set cursorTheme=breeze_cursors
-      # (kcminputrc), and kwin's cursor-theme fallback chain also ends at
-      # the literal name "breeze_cursors" (Cursor::fallbackThemeName()),
-      # but the "breeze" kde-projects module is deliberately excluded from
-      # the kdesrc-build source build above (see ignore-modules) since
-      # Ubuntu already packages its theme assets. Nothing was staging the
-      # actual breeze-cursor-theme deb though, so every cursor-theme
-      # lookup failed and the pointer was invisible everywhere. Same class
-      # of bug as the missing "Next" wallpaper fixed in
-      # tools/patch-kdesrc-sources.py.
+      - bluedevil
       - breeze-cursor-theme
+      - dolphin
+      - drkonqi
+      - kactivitymanagerd
+      - kde-cli-tools
+      - kde-cli-tools-data
+      - kde-config-sddm
+      - kdeplasma-addons-data
+      - kglobalacceld
+      - kinfocenter
+      - kmenuedit
+      - knighttime
+      - konsole
+      - konsole-kpart
+      - kscreen
+      - kscreenlocker
+      - ksshaskpass
+      - ksystemstats
+      - kwayland
+      - kwin-addons
+      - kwin-common
+      - kwin-wayland
+      - kwrited
       - libavcodec62
       - libavfilter11
       - libavformat62
       - libcanberra-pulse
       - libdisplay-info3
+      - libdolphinvcs6
       - libdrm2
+      - libdrm-amdgpu1
+      - libdrm-intel1
+      - libei1
       - libevdev2
       - libfreetype6
       - libgbm1
       - libgcrypt20
       - libglib2.0-0t64
+      - libkdecorations3-6
+      - libkdecorations3private2
+      - libkf6pulseaudioqt5
+      - libkf6screen8
+      - libkf6screen-bin
+      - libkf6screendpms8
+      - libkpipewire6
+      - libkpipewirerecord6
+      - libksysguard
+      - liblayershellqtinterface6
       - liblcms2-2
       - libmm-glib0
       - libnm0
+      - liboeffis1
       - libpam0g
+      - libpam-kwallet5
+      - libpam-kwallet-common
       - libpipewire-0.3-0t64
+      - libplasma6
+      - libpowerdevilcore2
       - libproxy1v5
       - libqalculate23
-      - libssh-4
       - libsensors5
+      - libsnapd-glib-2-1
+      - libssh-4
       - libsystemd0
       - libudev1
       - libwacom9
+      - libwayland-client0
       - libwayland-cursor0
       - libwayland-egl1
       - libxcb-cursor0
       - libxcvt0
       - libxkbcommon0
       - libxkbregistry0
+      - milou
+      - ocean-sound-theme
+      - plasma5support
+      - plasma-activities
+      - plasma-activities-stats
+      - plasma-dataengines-addons
+      - plasma-desktop
+      - plasma-integration
+      - plasma-nm
+      - plasma-pa
+      - plasma-systemmonitor
+      - plasma-thunderbolt
+      - plasma-vault
+      - plasma-wallpapers-addons
+      - plasma-welcome
+      - plasma-widgets-addons
+      - plasma-workspace
+      - plasma-workspace-wallpapers
+      - polkit-kde-agent-1
+      - powerdevil
+      - powerdevil-data
+      - systemsettings
+      - xdg-desktop-portal-kde
       - xserver-xorg-input-libinput
-      - xserver-xorg-input-wacom
       - xwayland
-    build-environment:
-      - CCACHE_DIR: ${SNAPCRAFT_PROJECT_DIR}/.ccache
-      - CCACHE_NOHASHDIR: "true"
-      - PATH: /usr/lib/ccache:/snap/kde-qt6-core26-sdk/current/usr/bin:/snap/kde-qt6-core26-sdk/current/usr/bin/qt6:/snap/kf6-core26-sdk/current/usr/bin:${PATH:+:$PATH}
-      - PKG_CONFIG_PATH: $CRAFT_PART_INSTALL/usr/share/pkgconfig:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kde-qt6-core26-sdk/current/usr/share/pkgconfig:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig:/snap/kf6-core26-sdk/current/usr/share/pkgconfig:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}
-      - XDG_DATA_DIRS: $CRAFT_PART_INSTALL/usr/share:/snap/kde-qt6-core26-sdk/current/usr/share:/snap/kf6-core26-sdk/current/usr/share:/usr/share${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}
-      - XDG_CONFIG_DIRS: $CRAFT_PART_INSTALL/etc/xdg:/snap/kde-qt6-core26-sdk/current/etc/xdg:/snap/kf6-core26-sdk/current/etc/xdg:/etc/xdg${XDG_CONFIG_DIRS:+:$XDG_CONFIG_DIRS}
-      - LD_LIBRARY_PATH: "$CRAFT_PART_INSTALL/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$CRAFT_PART_INSTALL/usr/lib:$CRAFT_PART_INSTALL/lib/:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kde-qt6-core26-sdk/current/usr/lib:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}:/snap/kf6-core26-sdk/current/usr/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-      - CMAKE_PREFIX_PATH: $CRAFT_PART_INSTALL/usr:/snap/kde-qt6-core26-sdk/current/usr:/snap/kf6-core26-sdk/current/usr${CMAKE_PREFIX_PATH:+:$CMAKE_PREFIX_PATH}
-      - QML2_IMPORT_PATH: $CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:$CRAFT_PART_INSTALL/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kf6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qml:/snap/kde-qt6-core26-sdk/current/usr/lib/${CRAFT_ARCH_TRIPLET_BUILD_FOR}/qt6/qml${QML2_IMPORT_PATH:+:$QML2_IMPORT_PATH}
+      # The MIME database: without it ksycoca is built with no service
+      # types ("Service type not found: inode/directory" spam, KService
+      # lookups fail). A Neon/Kubuntu desktop install gets it via the
+      # distro closure; the deb closure here only carries two stray mime
+      # files, so it is staged explicitly (distro-faithful, not a
+      # substitute).
+      - shared-mime-info
     override-pull: |
-      craftctl set version="$(/bin/date +%Y%m%d)"
-      # A previous failed build leaves the KF6 SDK QML module symlinks
-      # (and kdesrc-build's log/latest/* symlinks) under the part install
-      # dir. snapcraft's make plugin scans for symlinks to copy during the
-      # pull phase and chokes (IsADirectoryError) on directory symlinks.
-      # Clean them up here, before that scan runs.
-      PART_INSTALL="${CRAFT_PART_INSTALL:-/root/parts/plasma-desktop/install}"
-      rm -rf "$PART_INSTALL"/install-data/kde/src/log
-      find "$PART_INSTALL"/usr/lib -path "*/qml/*" -type l -delete 2>/dev/null || true
-      craftctl default
-    override-build: |
-      # CCACHE_DIR is set via build-environment to a host-persistent
-      # path (${SNAPCRAFT_PROJECT_DIR}/.ccache) so the cache survives
-      # `snapcraft clean` and accelerates the kdesrc-build C++ rebuilds.
-      # (A hardcoded /root/.ccache lives inside the LXD container and is
-      # wiped by snapcraft clean, defeating the cache.) PATH already
-      # includes /usr/lib/ccache via build-environment, so the ccache
-      # shim is picked up automatically by the cmake launcher config in
-      # hooks/000-setup-kdesrc-build.sh.
-      # A previous failed build can leave kdesrc-build's per-module log
-      # dir (with log/latest/* directory symlinks) and the KF6 SDK QML
-      # module symlinks under the part install dir. snapcraft's make
-      # plugin later scans for symlinks to copy and chokes
-      # (IsADirectoryError) on those. Drop them before building.
-      # $CRAFT_PART_INSTALL is not reliably exported into this script, so
-      # fall back to the known part install path.
-      PART_INSTALL="${CRAFT_PART_INSTALL:-/root/parts/plasma-desktop/install}"
-      rm -rf "$PART_INSTALL"/install-data/kde/src/log
-      find "$PART_INSTALL"/usr/lib -path "*/qml/*" -type l -delete 2>/dev/null || true
+      # craft injects http_proxy into the process env, but python-apt's
+      # fetch methods ignore the env and read apt.conf only -- without
+      # this file the deb downloads bypass the caching proxy entirely.
+      # On CI there is no http_proxy env and apt goes direct.
+      if [ -n "${http_proxy:-}" ]; then
+          printf 'Acquire::http::Proxy "%s";\n' "$http_proxy" \
+              > /etc/apt/apt.conf.d/95proxy
+      fi
+      craftctl set version="$(/bin/date +%Y%m%d)-deb"
       craftctl default
     override-prime: |
       craftctl default
+      # NOTE: all tree modifications (hooks, prune) happen HERE, on the
+      # primed tree, AFTER craftctl default, NOT in override-stage. craft's
+      # prime step replays the stage layer manifest and fails
+      # (FileNotFoundError) on any path deleted from the stage after
+      # staging; modifying $SNAPCRAFT_PRIME after craftctl default is the
+      # safe point (and mirrors the old build, whose hooks ran via
+      # `make install DESTDIR` on the tree that became the prime). Hooks
+      # expect cwd = tree root and use relative paths; they run in basename
+      # order like the Makefile's install target did. Hook temp copies live
+      # in /tmp so they never land in the snap.
+      #
+      # Vendor in the plasma-*.target units first: Neon's 6.7.5 debs (and
+      # the whole release/resolute suite) ship NO plasma-*.target files
+      # (a Neon packaging gap -- Ubuntu's own resolute plasma-workspace
+      # 6.6.6 deb does ship them; vendored from there). Hook 200 rewires
+      # them to the session snap's units exactly as the source build's
+      # kdesrc-install targets were rewired.
+      mkdir -p "$SNAPCRAFT_PRIME/usr/lib/systemd/user"
+      cp "$CRAFT_PROJECT_DIR"/vendor/systemd-user-targets/*.target \
+         "$SNAPCRAFT_PRIME/usr/lib/systemd/user/"
+      for f in "$CRAFT_PROJECT_DIR"/hooks/[0-9]*.sh; do
+          base="$(basename "$f")"
+          cp "$f" "/tmp/.hook-$base"
+          (cd "$SNAPCRAFT_PRIME" && bash "/tmp/.hook-$base")
+          rm -f "/tmp/.hook-$base"
+      done
+
+      # Prune the dependency closure that kf6-core26 provides at runtime
+      # (KF6/Qt runtime libs, QML modules, plugins), so this snap carries
+      # only Plasma content -- the split the source build had (its prime
+      # never contained KF6/Qt; hook 999 only had to clean build-time QML
+      # copies). Ownership-based: only files/symlinks listed in debs whose
+      # package name is in tools/kf6-provided-packages.txt are removed;
+      # directories are never removed wholesale (a dir like
+      # usr/lib/<triplet> is listed by many packages), empty dirs are
+      # cleaned up afterwards. This must run AFTER the hooks: hook 400
+      # moves kwallet.portal out of portals/, so the moved copy survives
+      # the prune of the kf6-kwallet deb's own paths.
+      provided="$CRAFT_PROJECT_DIR/tools/kf6-provided-packages.txt"
+      debdir=""
+      for cand in /root/parts/plasma-debs/stage_packages \
+                  "$CRAFT_PART_INSTALL/../stage_packages"; do
+          [ -d "$cand" ] && debdir="$cand" && break
+      done
+      if [ -z "$debdir" ]; then
+          echo "WARNING: stage_packages dir not found; skipping provided-elsewhere prune" >&2
+      else
+          for deb in "$debdir"/*.deb; do
+              pkg="$(dpkg-deb -f "$deb" Package)"
+              grep -qxF "$pkg" "$provided" || continue
+              dpkg-deb -c "$deb" | awk '
+                  $1 ~ /^d/ { next }
+                  {
+                      line = $0
+                      sub(/ -> .*$/, "", line)
+                      sub(/^[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +[^ ]+ +/, "", line)
+                      sub(/^\.\//, "", line)
+                      if (line != "") print line
+                  }' | while IFS= read -r p; do
+                  rm -f "$SNAPCRAFT_PRIME/$p" 2>/dev/null || true
+              done
+          done
+          find "$SNAPCRAFT_PRIME/usr" -mindepth 2 -type d -empty -delete 2>/dev/null || true
+      fi
+
+      # Record the resolved Neon/resolute deb set (name + version) inside
+      # the snap. go-build-kde compares this manifest between
+      # plasma-core26-desktop and kf6-core26 to catch Qt/KF6 version skew
+      # from rebuilding one content snap without the other.
+      mkdir -p "$SNAPCRAFT_PRIME/meta"
+      : > "$SNAPCRAFT_PRIME/meta/pkg-manifest.txt"
+      for deb in /root/parts/plasma-debs/stage_packages/*.deb \
+                 "$CRAFT_PART_INSTALL/../stage_packages"/*.deb; do
+          [ -e "$deb" ] || continue
+          dpkg-deb -f "$deb" Package Version \
+              | paste - - | sed 's/^Package: //; s/\tVersion: / /' \
+              >> "$SNAPCRAFT_PRIME/meta/pkg-manifest.txt"
+      done
+      sort -u -o "$SNAPCRAFT_PRIME/meta/pkg-manifest.txt" "$SNAPCRAFT_PRIME/meta/pkg-manifest.txt"
+
       # craft-parts' incremental stage->prime sync copies new/changed files
       # but does NOT delete files that disappeared from stage/part-install,
       # so service files removed by hooks/200 in a previous build can
@@ -243,4 +286,4 @@ parts:
       done
       for i in `dpkg -L pipewire pipewire-pulse | grep -v "^/\.$" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
       for i in `dpkg -L pipewire-bin | grep -v "^/\.$" | grep -v "usr/share" | sed -E -e 's,^/,,' | tac` ; do (rm -df "$SNAPCRAFT_PRIME/$i" || /bin/true) ; done
-      cd ${CRAFT_PART_SRC} && make test TESTDIR=${CRAFT_PRIME}
+      cd "$CRAFT_PROJECT_DIR" && make test TESTDIR="$SNAPCRAFT_PRIME"

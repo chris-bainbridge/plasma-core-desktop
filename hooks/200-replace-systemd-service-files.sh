@@ -22,6 +22,19 @@ removed_services=(
     plasma-xdg-desktop-portal-kde
     session-migration
     user-session-migration
+    # The xdg-desktop-portal DAEMON (and friends) come from the base at
+    # runtime; hook 250 keeps a drop-in for xdg-desktop-portal.service.
+    # These units only exist in the prime because the deb closure pulls
+    # the daemon packages (the source build never staged them).
+    xdg-desktop-portal
+    xdg-desktop-portal-rewrite-launchers
+    xdg-document-portal
+    xdg-permission-store
+    kio-fuse
+    appmenu-gtk-module
+    obex
+    dbus-org.bluez.obex
+    mpris-proxy
 )
 for service in "${removed_services[@]}"; do
     rm -f "usr/lib/systemd/user/$service.service"
@@ -130,13 +143,17 @@ qdbus_oneshot_services=(
 )
 for service in "${qdbus_oneshot_services[@]}"; do
     [ -f "usr/lib/systemd/user/$service.service" ] || continue
-    # The kdesrc-build substitutes the build-tree path for the qdbus
-    # binary (e.g. /root/stage/sdk-stage/kde-qt6-core26-sdk/usr/bin/qt6/qdbus),
-    # which does not exist at runtime. Rewrite it to the kf6-core26
-    # content snap's runtime path, and fix the LD_LIBRARY_PATH to the same
-    # content snap (the old kf6-core24 name is stale and not mounted).
+    # These oneshots invoke a qdbus client. The source build substituted a
+    # build-tree path for the binary (e.g.
+    # /root/stage/sdk-stage/kde-qt6-core26-sdk/usr/bin/qt6/qdbus) which the
+    # old hook rewrote to the kf6-core26 content snap. The Neon debs ship
+    # standard paths instead (/usr/bin/qdbus-qt6, /usr/lib/qt6/bin/qdbus,
+    # /usr/bin/qdbus6) which resolve against the core26 base at runtime and
+    # don't exist there. Rewrite any qdbus invocation to the kf6-core26
+    # content snap's qt6-tools qdbus6 binary, preserving arguments, and fix
+    # LD_LIBRARY_PATH to the same content snap.
     sed -i -E \
-        -e 's,/root/stage/sdk-stage/kde-qt6-core26-sdk/usr/bin/qt6,/snap/kf6-core26/current/usr/bin/qt6,' \
+        -e 's|^(ExecStart=[^ ]*/qdbus[^ ]*)(.*)$|ExecStart=/snap/kf6-core26/current/usr/bin/qdbus6\2|' \
         -e 's,/snap/kf6-core24/current/usr/lib/x86_64-linux-gnu/,/snap/kf6-core26/current/usr/lib/x86_64-linux-gnu/,' \
         "usr/lib/systemd/user/$service.service"
     echo >> "usr/lib/systemd/user/$service.service"
