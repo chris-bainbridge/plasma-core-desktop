@@ -6,14 +6,14 @@ description: |
   The content snap providing the binaries of a Plasma Session for Ubuntu Core.
 
   Since the deb-repack conversion this snap stages runtime packages from
-  the KDE Neon release/resolute apt suite (upstream release train:
-  Plasma 6.8.0 / KF6 6.31.0 / Qt 6.11.1) instead of compiling Plasma
-  from source. The package set
+  the KDE Neon release/resolute apt suite (the upstream release train)
+  instead of compiling Plasma from source. The package set
   was derived by mapping the file inventory of the last from-source
   build onto the suite's Contents index, so it stages exactly what the
   source build used to install. KF6/Qt runtime libraries are pruned at
   stage time -- the kf6-core26 content snap provides them at runtime
-  (same split the source build had).
+  (same split the source build had). The suite floats; exact per-build
+  package versions are recorded in meta/pkg-manifest.txt inside the snap.
 
 grade: stable
 confinement: strict
@@ -203,8 +203,7 @@ parts:
       # in /tmp so they never land in the snap.
       #
       # Vendor in the plasma-*.target units first: Neon's Plasma debs
-      # (6.7.5 and 6.8.0; the whole resolute suite) ship NO
-      # plasma-*.target files
+      # (the whole resolute suite) ship NO plasma-*.target files
       # (a Neon packaging gap -- Ubuntu's own resolute plasma-workspace
       # 6.6.6 deb does ship them; vendored from there). Hook 200 rewires
       # them to the session snap's units exactly as the source build's
